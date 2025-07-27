@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Tracker Pro</title>
+    <link rel="manifest" href="data:application/manifest+json,{}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border: #dee2e6;
+            --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            background: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab:hover {
+            transform: translateY(-3px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .summary-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .summary-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .summary-goal {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--light-gray);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .summary-status {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-positive {
+            color: var(--success);
+        }
+
+        .status-negative {
+            color: var(--danger);
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-table th {
+            background: var(--light);
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        .history-table tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(76, 201, 240, 0.2);
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background: rgba(247, 37, 133, 0.2);
+            color: var(--danger);
+        }
+
+        .goal-container {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .goal-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .goal-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .goal-status {
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: var(--success);
+        }
+        
+        .notification.error {
+            background: var(--danger);
+        }
+
+        .account-badge {
+            background: #e0e0e0;
+            border-radius: 12px;
+            padding: 8px 15px;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            margin: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .account-balance {
+            font-weight: bold;
+            margin-left: 5px;
+            color: var(--primary);
+        }
+
+        .meal-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .meal-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .meal-total {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .macro-item {
+            padding: 8px;
+            border-radius: 8px;
+            background: var(--light);
+        }
+
+        .macro-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .macro-value {
+            font-weight: 700;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .macro-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .form-control, select {
+                font-size: 14px;
+                padding: 10px 8px;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .history-table th, 
+            .history-table td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+        }
+
+        /* Animation for section transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section.active {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .task-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .task-info {
+            flex: 1;
+        }
+        
+        .task-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .task-progress {
+            width: 100%;
+            height: 5px;
+            background: var(--light-gray);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .task-progress-fill {
+            height: 100%;
+            background: var(--primary);
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .task-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--gray);
+            font-size: 1.2rem;
+        }
+        
+        .task-btn:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="notification success" id="successNotification">Data saved successfully!</div>
+    <div class="notification error" id="errorNotification">Error saving data!</div>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-line"></i> Life Tracker Pro</h1>
+            <p class="subtitle">Track your progress across all aspects of life</p>
+        </header>
+
+        <div class="dashboard">
+            <div class="summary-card" id="tradingSummary">
+                <div class="summary-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h3>Trading</h3>
+                <div class="summary-value">$0.00</div>
+                <div class="summary-goal">Goal: $0.00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="tradingProgress" style="width: 0%;"></div>
+                </div>
+                <div class="summary-status status-positive" id="tradingStatus">Loading...</div>
+            </div>
+            
+            <div class="summary-card" id="weightSummary">
+                <div class="summary-icon">
+                    <i class="fas fa-weight-scale"></i>
+                </div>
+                <h3>Weight</h3>
+                <div class="summary-value">0 lbs</div>
+                <div class="summary-goal">Goal: 0 lbs</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="weightProgress" style="width: 0%;"></div>
+                </div>
+                <div class="summary-status status-positive" id="weightStatus">Loading...</div>
+            </div>
+            
+            <div class="summary-card" id="nutritionSummary">
+                <div class="summary-icon">
+                    <i class="fas fa-apple-whole"></i>
+                </div>
+                <h3>Nutrition</h3>
+                <div class="summary-value">0 cal</div>
+                <div class="summary-goal">Goal: 0 cal</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="nutritionProgress" style="width: 0%;"></div>
+                </div>
+                <div class="summary-status status-positive" id="nutritionStatus">Loading...</div>
+            </div>
+            
+            <div class="summary-card" id="budgetSummary">
+                <div class="summary-icon">
+                    <i class="fas fa-sack-dollar"></i>
+                </div>
+                <h3>Budget</h3>
+                <div class="summary-value">$0.00</div>
+                <div class="summary-goal">Goal: $0.00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="budgetProgress" style="width: 0%;"></div>
+                </div>
+                <div class="summary-status status-positive" id="budgetStatus">Loading...</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="trading">
+                <i class="fas fa-chart-line"></i> Trading
+            </button>
+            <button class="tab" data-tab="weight">
+                <i class="fas fa-weight-scale"></i> Weight
+            </button>
+            <button class="tab" data-tab="nutrition">
+                <i class="fas fa-apple-whole"></i> Nutrition
+            </button>
+            <button class="tab" data-tab="budget">
+                <i class="fas fa-sack-dollar"></i> Budget
+            </button>
+            <button class="tab" data-tab="work">
+                <i class="fas fa-briefcase"></i> Work
+            </button>
+            <button class="tab" data-tab="study">
+                <i class="fas fa-graduation-cap"></i> Study
+            </button>
+        </div>
+
+        <!-- Trading Journal Section -->
+        <section id="trading" class="section active">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> Trading Journal</h2>
+                <div>
+                    <button class="btn" id="addAccountBtn"><i class="fas fa-plus"></i> Add Account</button>
+                    <button class="btn" id="addTradeBtn"><i class="fas fa-plus"></i> Add Trade</button>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>Account Summary</h3>
+                    <div id="accountsContainer">Loading accounts...</div>
+                    
+                    <h3>Add New Trade</h3>
+                    <div class="form-group">
+                        <label for="tradeAccount">Account</label>
+                        <select class="form-control" id="tradeAccount">
+                            <option value="">Loading accounts...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tradeSymbol">Symbol/Instrument</label>
+                        <input type="text" class="form-control" id="tradeSymbol" placeholder="AAPL, TSLA, BTC, etc.">
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="tradeEntry">Entry Price</label>
+                            <input type="number" class="form-control" id="tradeEntry" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeExit">Exit Price</label>
+                            <input type="number" class="form-control" id="tradeExit" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="tradeSize">Size/Quantity</label>
+                            <input type="number" class="form-control" id="tradeSize">
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeResult">P/L ($)</label>
+                            <input type="number" class="form-control" id="tradeResult" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tradeNotes">Trade Notes</label>
+                        <textarea class="form-control" id="tradeNotes" rows="3"></textarea>
+                    </div>
+                    
+                    <button class="btn" id="saveTradeBtn"><i class="fas fa-save"></i> Save Trade</button>
+                </div>
+                
+                <div>
+                    <h3>Performance Chart</h3>
+                    <div class="chart-container">
+                        <canvas id="tradingChart"></canvas>
+                    </div>
+                    
+                    <h3>Recent Trades</h3>
+                    <table class="history-table" id="tradingHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Symbol</th>
+                                <th>P/L</th>
+                                <th>Account</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Weight Tracker Section -->
+        <section id="weight" class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-weight-scale"></i> Weight Tracker</h2>
+                <button class="btn" id="addWeightBtn"><i class="fas fa-plus"></i> Add Weight Entry</button>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>Current Progress</h3>
+                    <div class="form-group">
+                        <label for="currentWeight">Today's Weight (lbs)</label>
+                        <input type="number" class="form-control" id="currentWeight" step="0.1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weightGoal">Target Weight (lbs)</label>
+                        <input type="number" class="form-control" id="weightGoal" step="0.1" value="180">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="targetDate">Target Date</label>
+                        <input type="date" class="form-control" id="targetDate">
+                    </div>
+                    
+                    <button class="btn" id="saveWeightBtn"><i class="fas fa-save"></i> Save Weight</button>
+                    
+                    <div class="goal-container" style="margin-top: 20px;">
+                        <div class="goal-header">
+                            <div class="goal-title">Weekly Progress</div>
+                            <div class="goal-progress">
+                                <div class="goal-status status-positive" id="weeklyProgress">Loading...</div>
+                                <span class="badge badge-success">On Track</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="weeklyProgressBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3>Weight Progress Chart</h3>
+                    <div class="chart-container">
+                        <canvas id="weightChart"></canvas>
+                    </div>
+                    
+                    <h3>Recent Entries</h3>
+                    <table class="history-table" id="weightHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Weight</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="3">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Nutrition Tracker Section -->
+        <section id="nutrition" class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-apple-whole"></i> Nutrition Tracker</h2>
+                <button class="btn" id="addNutritionBtn"><i class="fas fa-plus"></i> Add Meal</button>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>Today's Nutrition</h3>
+                    <div class="goal-container">
+                        <div class="goal-header">
+                            <div class="goal-title">Daily Totals</div>
+                            <div class="goal-progress">
+                                <div class="goal-status" id="nutritionTotals">0 / 0 cal</div>
+                            </div>
+                        </div>
+                        <div class="macro-grid">
+                            <div class="macro-item">
+                                <div class="macro-label">Calories</div>
+                                <div class="macro-value" id="totalCalories">0</div>
+                            </div>
+                            <div class="macro-item">
+                                <div class="macro-label">Protein</div>
+                                <div class="macro-value" id="totalProtein">0g</div>
+                            </div>
+                            <div class="macro-item">
+                                <div class="macro-label">Carbs</div>
+                                <div class="macro-value" id="totalCarbs">0g</div>
+                            </div>
+                            <div class="macro-item">
+                                <div class="macro-label">Fats</div>
+                                <div class="macro-value" id="totalFats">0g</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="mealsContainer">
+                        <div class="meal-card">
+                            <div class="meal-header">
+                                <div class="meal-title">Breakfast</div>
+                                <div class="meal-total">320 cal</div>
+                            </div>
+                            <div class="macro-grid">
+                                <div class="macro-item">
+                                    <div class="macro-label">Protein</div>
+                                    <div class="macro-value">25g</div>
+                                </div>
+                                <div class="macro-item">
+                                    <div class="macro-label">Carbs</div>
+                                    <div class="macro-value">40g</div>
+                                </div>
+                                <div class="macro-item">
+                                    <div class="macro-label">Fats</div>
+                                    <div class="macro-value">10g</div>
+                                </div>
+                                <div class="macro-item">
+                                    <div class="macro-label">Fasting</div>
+                                    <div class="macro-value">12h</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3>Add Meal</h3>
+                    <div class="form-group">
+                        <label for="mealType">Meal Type</label>
+                        <select class="form-control" id="mealType">
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Snack">Snack</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="foodDescription">Food Description</label>
+                        <input type="text" class="form-control" id="foodDescription" placeholder="What did you eat?">
+                    </div>
+                    
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label for="calories">Calories</label>
+                            <input type="number" class="form-control" id="calories">
+                        </div>
+                        <div class="form-group">
+                            <label for="protein">Protein (g)</label>
+                            <input type="number" class="form-control" id="protein" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="carbs">Carbs (g)</label>
+                            <input type="number" class="form-control" id="carbs" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label for="fats">Fats (g)</label>
+                            <input type="number" class="form-control" id="fats" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="fastingHours">Fasting Hours</label>
+                            <input type="number" class="form-control" id="fastingHours" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="saveMealBtn"><i class="fas fa-save"></i> Save Meal</button>
+                </div>
+                
+                <div>
+                    <h3>Nutrition Goals</h3>
+                    <div class="form-group">
+                        <label for="dailyCalories">Daily Calories</label>
+                        <input type="number" class="form-control" id="dailyCalories" value="2000">
+                    </div>
+                    
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label for="proteinGoal">Protein Goal (g)</label>
+                            <input type="number" class="form-control" id="proteinGoal" value="150">
+                        </div>
+                        <div class="form-group">
+                            <label for="carbsGoal">Carbs Goal (g)</label>
+                            <input type="number" class="form-control" id="carbsGoal" value="200">
+                        </div>
+                        <div class="form-group">
+                            <label for="fatsGoal">Fats Goal (g)</label>
+                            <input type="number" class="form-control" id="fatsGoal" value="65">
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="saveNutritionGoalsBtn"><i class="fas fa-save"></i> Save Goals</button>
+                    
+                    <h3>Weekly Progress</h3>
+                    <div class="chart-container">
+                        <canvas id="nutritionChart"></canvas>
+                    </div>
+                    
+                    <h3>Recent Meals</h3>
+                    <table class="history-table" id="nutritionHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Meal</th>
+                                <th>Calories</th>
+                                <th>Protein</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Budget Tracker Section -->
+        <section id="budget" class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-sack-dollar"></i> Budget Tracker</h2>
+                <button class="btn" id="addTransactionBtn"><i class="fas fa-plus"></i> Add Transaction</button>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>Add Transaction</h3>
+                    <div class="form-group">
+                        <label for="transactionDate">Date</label>
+                        <input type="date" class="form-control" id="transactionDate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transactionDescription">Description</label>
+                        <input type="text" class="form-control" id="transactionDescription" placeholder="What was this for?">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transactionCategory">Category</label>
+                        <select class="form-control" id="transactionCategory">
+                            <option value="Food">Food</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="Housing">Housing</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Income">Income</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="transactionAmount">Amount</label>
+                            <input type="number" class="form-control" id="transactionAmount" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="transactionAccount">Account</label>
+                            <input type="text" class="form-control" id="transactionAccount" placeholder="Cash, Bank, etc.">
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="saveTransactionBtn"><i class="fas fa-save"></i> Save Transaction</button>
+                    
+                    <h3>Monthly Budget</h3>
+                    <div class="form-group">
+                        <label for="monthlyBudget">Budget Amount ($)</label>
+                        <input type="number" class="form-control" id="monthlyBudget" value="3000">
+                    </div>
+                    <button class="btn" id="saveBudgetBtn"><i class="fas fa-save"></i> Save Budget</button>
+                </div>
+                
+                <div>
+                    <h3>Spending Overview</h3>
+                    <div class="chart-container">
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                    
+                    <h3>Recent Transactions</h3>
+                    <table class="history-table" id="budgetHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Work Tracker Section -->
+        <section id="work" class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-briefcase"></i> Work Tracker</h2>
+                <div>
+                    <button class="btn" id="addProjectBtn"><i class="fas fa-plus"></i> Add Project</button>
+                    <button class="btn" id="addTaskBtn"><i class="fas fa-plus"></i> Add Task</button>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>Current Projects</h3>
+                    <div id="projectsContainer">
+                        <div class="goal-container">
+                            <div class="goal-header">
+                                <div class="goal-title">Website Redesign</div>
+                                <div class="goal-progress">
+                                    <div class="goal-status">65% complete</div>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3>Add New Project</h3>
+                    <div class="form-group">
+                        <label for="projectName">Project Name</label>
+                        <input type="text" class="form-control" id="projectName" placeholder="Project X">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectDescription">Description</label>
+                        <textarea class="form-control" id="projectDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="projectStart">Start Date</label>
+                            <input type="date" class="form-control" id="projectStart">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectEnd">End Date</label>
+                            <input type="date" class="form-control" id="projectEnd">
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="saveProjectBtn"><i class="fas fa-save"></i> Save Project</button>
+                    
+                    <h3>Add Task</h3>
+                    <div class="form-group">
+                        <label for="taskProject">Project</label>
+                        <select class="form-control" id="taskProject">
+                            <option value="">Select project...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskName">Task Name</label>
+                        <input type="text" class="form-control" id="taskName" placeholder="Complete feature X">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskProgress">Progress (%)</label>
+                        <input type="number" class="form-control" id="taskProgress" min="0" max="100" value="0">
+                    </div>
+                    
+                    <button class="btn" id="saveTaskBtn"><i class="fas fa-save"></i> Save Task</button>
+                </div>
+                
+                <div>
+                    <h3>Tasks</h3>
+                    <div id="tasksContainer">
+                        <div class="task-item">
+                            <div class="task-info">
+                                <div class="task-name">Design homepage</div>
+                                <div class="task-progress">
+                                    <div class="task-progress-fill" style="width: 75%;"></div>
+                                </div>
+                                <div>Project: Website Redesign</div>
+                            </div>
+                            <div class="task-actions">
+                                <button class="task-btn"><i class="fas fa-edit"></i></button>
+                                <button class="task-btn"><i class="fas fa-check"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3>Time Tracking</h3>
+                    <div class="chart-container">
+                        <canvas id="workChart"></canvas>
+                    </div>
+                    
+                    <h3>Recent Activity</h3>
+                    <table class="history-table" id="workHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Project</th>
+                                <th>Task</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Study Tracker Section -->
+        <section id="study" class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-graduation-cap"></i> Study Tracker</h2>
+                <div>
+                    <button class="btn" id="addSubjectBtn"><i class="fas fa-plus"></i> Add Subject</button>
+                    <button class="btn" id="addStudySessionBtn"><i class="fas fa-plus"></i> Add Session</button>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>Study Goals</h3>
+                    <div class="form-group">
+                        <label for="weeklyStudyGoal">Weekly Study Goal (hours)</label>
+                        <input type="number" class="form-control" id="weeklyStudyGoal" value="15" step="0.5">
+                    </div>
+                    <button class="btn" id="saveStudyGoalsBtn"><i class="fas fa-save"></i> Save Goals</button>
+                    
+                    <h3>Add Study Session</h3>
+                    <div class="form-group">
+                        <label for="studyDate">Date</label>
+                        <input type="date" class="form-control" id="studyDate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studySubject">Subject</label>
+                        <select class="form-control" id="studySubject">
+                            <option value="">Select subject...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studyTopic">Topic</label>
+                        <input type="text" class="form-control" id="studyTopic" placeholder="What did you study?">
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="studyTime">Time Spent (hours)</label>
+                            <input type="number" class="form-control" id="studyTime" step="0.25">
+                        </div>
+                        <div class="form-group">
+                            <label for="studyProgress">Progress (%)</label>
+                            <input type="number" class="form-control" id="studyProgress" min="0" max="100">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studyNotes">Notes</label>
+                        <textarea class="form-control" id="studyNotes" rows="3"></textarea>
+                    </div>
+                    
+                    <button class="btn" id="saveStudySessionBtn"><i class="fas fa-save"></i> Save Session</button>
+                </div>
+                
+                <div>
+                    <h3>Study Progress</h3>
+                    <div class="goal-container">
+                        <div class="goal-header">
+                            <div class="goal-title">This Week</div>
+                            <div class="goal-progress">
+                                <div class="goal-status">5 / 15 hours</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 33%;"></div>
+                        </div>
+                    </div>
+                    
+                    <h3>Study Time Chart</h3>
+                    <div class="chart-container">
+                        <canvas id="studyChart"></canvas>
+                    </div>
+                    
+                    <h3>Recent Sessions</h3>
+                    <table class="history-table" id="studyHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Subject</th>
+                                <th>Time</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <div class="footer">
+            <p>Life Tracker Pro &copy; <span id="currentYear"></span> | Track Your Progress, Transform Your Life</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwhuSgpkItj4BlTLGKmtlMwI356qrpDb-h8fNp8XoeQg94uys0EhmUwsQgUih47E3Nuxw/exec'; // Replace with your deployed web app URL
+        let currentData = {
+            trading: [],
+            weight: [],
+            nutrition: [],
+            budget: [],
+            work: [],
+            study: [],
+            accounts: [],
+            goals: {}
+        };
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            setupTabs();
+            await loadInitialData();
+            setupEventListeners();
+            initializeCharts();
+            updateDashboard();
+        });
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab, .section').forEach(el => 
+                        el.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+        }
+
+        async function loadInitialData() {
+            try {
+                showLoading();
+                
+                const [trades, weights, nutrition, budget, work, study, accounts, goals] = await Promise.all([
+                    apiCall({ action: 'get', category: 'trading', limit: 10 }),
+                    apiCall({ action: 'get', category: 'weight', limit: 10 }),
+                    apiCall({ action: 'get', category: 'nutrition', limit: 10 }),
+                    apiCall({ action: 'get', category: 'budget', limit: 10 }),
+                    apiCall({ action: 'get', category: 'work', limit: 10 }),
+                    apiCall({ action: 'get', category: 'study', limit: 10 }),
+                    apiCall({ action: 'getAccounts' }),
+                    apiCall({ action: 'getGoals' })
+                ]);
+                
+                currentData.trading = trades.data || [];
+                currentData.weight = weights.data || [];
+                currentData.nutrition = nutrition.data || [];
+                currentData.budget = budget.data || [];
+                currentData.work = work.data || [];
+                currentData.study = study.data || [];
+                currentData.accounts = accounts.data || [];
+                currentData.goals = processGoals(goals.data);
+                
+                populateTable('tradingHistoryTable', currentData.trading, ['Date', 'Instrument', 'P/L', 'Account']);
+                populateTable('weightHistoryTable', currentData.weight, ['Date', 'Weight', 'Trend']);
+                populateTable('nutritionHistoryTable', currentData.nutrition, ['Date', 'Meal', 'Calories', 'Protein']);
+                populateTable('budgetHistoryTable', currentData.budget, ['Date', 'Description', 'Amount', 'Category']);
+                populateTable('workHistoryTable', currentData.work, ['Date', 'Project', 'Task', 'Timespent']);
+                populateTable('studyHistoryTable', currentData.study, ['Date', 'Subject', 'Timespent', 'Progress']);
+                
+                updateAccountDropdown(currentData.accounts);
+                renderAccounts(currentData.accounts);
+                updateNutritionDashboard();
+                
+            } catch (error) {
+                showNotification('error', 'Failed to load data: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function processGoals(goals) {
+            const goalMap = {};
+            (goals || []).forEach(goal => {
+                goalMap[goal.Category] = goal;
+            });
+            return goalMap;
+        }
+
+        async function apiCall(payload) {
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+            
+            try {
+                const response = await fetch(API_URL, options);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.status >= 400) throw new Error(result.error || 'API Error');
+                return result;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        function updateAccountDropdown(accounts) {
+            const select = document.getElementById('tradeAccount');
+            select.innerHTML = accounts.length > 0 
+                ? accounts.map(acc => `<option value="${acc.Name}">${acc.Name} (${acc.Currency})</option>`).join('')
+                : '<option value="">No accounts found</option>';
+        }
+
+        function renderAccounts(accounts) {
+            const container = document.getElementById('accountsContainer');
+            if (accounts.length === 0) {
+                container.innerHTML = '<p>No accounts found. Add an account to start trading.</p>';
+                return;
+            }
+            
+            container.innerHTML = accounts.map(acc => `
+                <div class="account-badge">
+                    <i class="fas fa-wallet"></i> ${acc.Name}
+                    <span class="account-balance">$${(parseFloat(acc.Balance) || 0).toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
+
+        function setupEventListeners() {
+            // Trading
+            document.getElementById('addAccountBtn').addEventListener('click', addAccount);
+            document.getElementById('saveTradeBtn').addEventListener('click', saveTrade);
+            
+            // Weight
+            document.getElementById('saveWeightBtn').addEventListener('click', saveWeight);
+            
+            // Nutrition
+            document.getElementById('saveMealBtn').addEventListener('click', saveMeal);
+            document.getElementById('saveNutritionGoalsBtn').addEventListener('click', saveNutritionGoals);
+            
+            // Budget
+            document.getElementById('saveTransactionBtn').addEventListener('click', saveTransaction);
+            document.getElementById('saveBudgetBtn').addEventListener('click', saveBudget);
+            
+            // Work
+            document.getElementById('saveProjectBtn').addEventListener('click', saveProject);
+            document.getElementById('saveTaskBtn').addEventListener('click', saveTask);
+            
+            // Study
+            document.getElementById('saveStudySessionBtn').addEventListener('click', saveStudySession);
+            document.getElementById('saveStudyGoalsBtn').addEventListener('click', saveStudyGoals);
+        }
+
+        async function addAccount() {
+            const name = prompt('Enter account name:');
+            if (name) {
+                try {
+                    await apiCall({
+                        action: 'addAccount',
+                        data: { name, type: 'Trading', currency: 'USD', balance: 0 }
+                    });
+                    showNotification('success', 'Account added successfully!');
+                    const accounts = await apiCall({ action: 'getAccounts' });
+                    currentData.accounts = accounts.data;
+                    updateAccountDropdown(currentData.accounts);
+                    renderAccounts(currentData.accounts);
+                } catch (error) {
+                    showNotification('error', 'Failed to add account: ' + error.message);
+                }
+            }
+        }
+
+        async function saveTrade() {
+            const account = document.getElementById('tradeAccount').value;
+            const symbol = document.getElementById('tradeSymbol').value;
+            const entry = document.getElementById('tradeEntry').value;
+            const exit = document.getElementById('tradeExit').value;
+            const size = document.getElementById('tradeSize').value;
+            const result = document.getElementById('tradeResult').value;
+            const notes = document.getElementById('tradeNotes').value;
+            
+            if (!account || !symbol || !size || !result) {
+                showNotification('error', 'Please fill in all required fields');
+                return;
+            }
+            
+            const tradeData = {
+                Account: account,
+                Instrument: symbol,
+                Quantity: size,
+                Entry: entry,
+                Exit: exit,
+                'P/L': result,
+                Comments: notes
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'trading', data: tradeData });
+                showNotification('success', 'Trade saved successfully!');
+                
+                // Clear form
+                document.getElementById('tradeSymbol').value = '';
+                document.getElementById('tradeSize').value = '';
+                document.getElementById('tradeEntry').value = '';
+                document.getElementById('tradeExit').value = '';
+                document.getElementById('tradeResult').value = '';
+                document.getElementById('tradeNotes').value = '';
+                
+                // Reload data
+                const trades = await apiCall({ action: 'get', category: 'trading', limit: 10 });
+                currentData.trading = trades.data;
+                populateTable('tradingHistoryTable', currentData.trading, ['Date', 'Instrument', 'P/L', 'Account']);
+                
+                // Update accounts (balance changed)
+                const accounts = await apiCall({ action: 'getAccounts' });
+                currentData.accounts = accounts.data;
+                renderAccounts(currentData.accounts);
+                updateDashboard();
+                
+            } catch (error) {
+                showNotification('error', 'Error saving trade: ' + error.message);
+            }
+        }
+
+        async function saveWeight() {
+            const weight = document.getElementById('currentWeight').value;
+            const goal = document.getElementById('weightGoal').value;
+            const date = document.getElementById('targetDate').value;
+            
+            if (!weight) {
+                showNotification('error', 'Please enter your current weight');
+                return;
+            }
+            
+            const weightData = {
+                Weight: weight,
+                TargetWeight: goal,
+                TargetDate: date
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'weight', data: weightData });
+                showNotification('success', 'Weight saved successfully!');
+                
+                document.getElementById('currentWeight').value = '';
+                
+                const weights = await apiCall({ action: 'get', category: 'weight', limit: 10 });
+                currentData.weight = weights.data;
+                populateTable('weightHistoryTable', currentData.weight, ['Date', 'Weight', 'Trend']);
+                updateDashboard();
+                
+            } catch (error) {
+                showNotification('error', 'Error saving weight: ' + error.message);
+            }
+        }
+
+        async function saveMeal() {
+            const mealType = document.getElementById('mealType').value;
+            const food = document.getElementById('foodDescription').value;
+            const calories = document.getElementById('calories').value;
+            const protein = document.getElementById('protein').value;
+            const carbs = document.getElementById('carbs').value;
+            const fats = document.getElementById('fats').value;
+            const fasting = document.getElementById('fastingHours').value;
+            
+            if (!mealType || !food || !calories) {
+                showNotification('error', 'Please fill in required fields');
+                return;
+            }
+            
+            const mealData = {
+                Meal: mealType,
+                Food: food,
+                Calories: calories,
+                Protein: protein || 0,
+                Carbs: carbs || 0,
+                Fats: fats || 0,
+                FastingHours: fasting || 0
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'nutrition', data: mealData });
+                showNotification('success', 'Meal saved successfully!');
+                
+                // Clear form
+                document.getElementById('foodDescription').value = '';
+                document.getElementById('calories').value = '';
+                document.getElementById('protein').value = '';
+                document.getElementById('carbs').value = '';
+                document.getElementById('fats').value = '';
+                document.getElementById('fastingHours').value = '';
+                
+                // Reload data
+                const nutrition = await apiCall({ action: 'get', category: 'nutrition', limit: 10 });
+                currentData.nutrition = nutrition.data;
+                populateTable('nutritionHistoryTable', currentData.nutrition, ['Date', 'Meal', 'Calories', 'Protein']);
+                updateNutritionDashboard();
+                
+            } catch (error) {
+                showNotification('error', 'Error saving meal: ' + error.message);
+            }
+        }
+
+        function updateNutritionDashboard() {
+            // Calculate totals for today
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeals = currentData.nutrition.filter(meal => 
+                (meal.Date || meal.Timestamp.split('T')[0]) === today);
+            
+            const totals = todayMeals.reduce((sum, meal) => {
+                sum.calories += parseFloat(meal.Calories) || 0;
+                sum.protein += parseFloat(meal.Protein) || 0;
+                sum.carbs += parseFloat(meal.Carbs) || 0;
+                sum.fats += parseFloat(meal.Fats) || 0;
+                return sum;
+            }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
+            
+            // Update UI
+            document.getElementById('totalCalories').textContent = totals.calories.toFixed(0);
+            document.getElementById('totalProtein').textContent = totals.protein.toFixed(1) + 'g';
+            document.getElementById('totalCarbs').textContent = totals.carbs.toFixed(1) + 'g';
+            document.getElementById('totalFats').textContent = totals.fats.toFixed(1) + 'g';
+            
+            // Update meals container
+            const mealsContainer = document.getElementById('mealsContainer');
+            mealsContainer.innerHTML = todayMeals.map(meal => `
+                <div class="meal-card">
+                    <div class="meal-header">
+                        <div class="meal-title">${meal.Meal}</div>
+                        <div class="meal-total">${meal.Calories} cal</div>
+                    </div>
+                    <div class="macro-grid">
+                        <div class="macro-item">
+                            <div class="macro-label">Protein</div>
+                            <div class="macro-value">${meal.Protein || 0}g</div>
+                        </div>
+                        <div class="macro-item">
+                            <div class="macro-label">Carbs</div>
+                            <div class="macro-value">${meal.Carbs || 0}g</div>
+                        </div>
+                        <div class="macro-item">
+                            <div class="macro-label">Fats</div>
+                            <div class="macro-value">${meal.Fats || 0}g</div>
+                        </div>
+                        <div class="macro-item">
+                            <div class="macro-label">Fasting</div>
+                            <div class="macro-value">${meal.FastingHours || 0}h</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update nutrition summary card
+            const goalCalories = parseFloat(document.getElementById('dailyCalories').value) || 2000;
+            const progress = goalCalories > 0 ? Math.min(100, (totals.calories / goalCalories) * 100) : 0;
+            
+            document.getElementById('nutritionSummary').querySelector('.summary-value').textContent = 
+                `${totals.calories.toFixed(0)} cal`;
+            document.getElementById('nutritionSummary').querySelector('.summary-goal').textContent = 
+                `Goal: ${goalCalories} cal`;
+            document.getElementById('nutritionProgress').style.width = `${progress}%`;
+            document.getElementById('nutritionStatus').textContent = 
+                `${totals.protein.toFixed(1)}g protein`;
+        }
+
+        async function saveNutritionGoals() {
+            const calories = document.getElementById('dailyCalories').value;
+            const protein = document.getElementById('proteinGoal').value;
+            const carbs = document.getElementById('carbsGoal').value;
+            const fats = document.getElementById('fatsGoal').value;
+            
+            try {
+                await apiCall({
+                    action: 'add',
+                    category: 'goals',
+                    data: {
+                        Category: 'nutrition',
+                        GoalName: 'Daily Nutrition',
+                        TargetValue: `${calories}|${protein}|${carbs}|${fats}`
+                    }
+                });
+                showNotification('success', 'Nutrition goals saved!');
+                updateNutritionDashboard();
+            } catch (error) {
+                showNotification('error', 'Error saving goals: ' + error.message);
+            }
+        }
+
+        async function saveTransaction() {
+            const date = document.getElementById('transactionDate').value || new Date().toISOString().split('T')[0];
+            const description = document.getElementById('transactionDescription').value;
+            const category = document.getElementById('transactionCategory').value;
+            const amount = document.getElementById('transactionAmount').value;
+            const account = document.getElementById('transactionAccount').value;
+            
+            if (!description || !amount) {
+                showNotification('error', 'Please fill in required fields');
+                return;
+            }
+            
+            const transactionData = {
+                Date: date,
+                Description: description,
+                Category: category,
+                Amount: amount,
+                Account: account
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'budget', data: transactionData });
+                showNotification('success', 'Transaction saved successfully!');
+                
+                // Clear form
+                document.getElementById('transactionDescription').value = '';
+                document.getElementById('transactionAmount').value = '';
+                document.getElementById('transactionAccount').value = '';
+                
+                // Reload data
+                const budget = await apiCall({ action: 'get', category: 'budget', limit: 10 });
+                currentData.budget = budget.data;
+                populateTable('budgetHistoryTable', currentData.budget, ['Date', 'Description', 'Amount', 'Category']);
+                updateDashboard();
+                
+            } catch (error) {
+                showNotification('error', 'Error saving transaction: ' + error.message);
+            }
+        }
+
+        async function saveBudget() {
+            const amount = document.getElementById('monthlyBudget').value;
+            
+            try {
+                await apiCall({
+                    action: 'add',
+                    category: 'goals',
+                    data: {
+                        Category: 'budget',
+                        GoalName: 'Monthly Budget',
+                        TargetValue: amount
+                    }
+                });
+                showNotification('success', 'Budget goal saved!');
+                updateDashboard();
+            } catch (error) {
+                showNotification('error', 'Error saving budget: ' + error.message);
+            }
+        }
+
+        async function saveProject() {
+            const name = document.getElementById('projectName').value;
+            const description = document.getElementById('projectDescription').value;
+            const start = document.getElementById('projectStart').value;
+            const end = document.getElementById('projectEnd').value;
+            
+            if (!name) {
+                showNotification('error', 'Project name is required');
+                return;
+            }
+            
+            const projectData = {
+                Project: name,
+                Description: description,
+                StartDate: start,
+                EndDate: end,
+                Progress: 0,
+                Status: 'Active'
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'work', data: projectData });
+                showNotification('success', 'Project saved successfully!');
+                
+                // Clear form
+                document.getElementById('projectName').value = '';
+                document.getElementById('projectDescription').value = '';
+                document.getElementById('projectStart').value = '';
+                document.getElementById('projectEnd').value = '';
+                
+                // Reload data
+                const work = await apiCall({ action: 'get', category: 'work', limit: 10 });
+                currentData.work = work.data;
+                updateProjectsList();
+                populateTable('workHistoryTable', currentData.work, ['Date', 'Project', 'Task', 'Timespent']);
+                
+            } catch (error) {
+                showNotification('error', 'Error saving project: ' + error.message);
+            }
+        }
+
+        function updateProjectsList() {
+            const projects = [...new Set(currentData.work.map(item => item.Project))];
+            const container = document.getElementById('projectsContainer');
+            const select = document.getElementById('taskProject');
+            
+            // Update projects dropdown
+            select.innerHTML = '<option value="">Select project...</option>' + 
+                projects.map(proj => `<option value="${proj}">${proj}</option>`).join('');
+            
+            // Update projects cards
+            container.innerHTML = projects.map(project => {
+                const projectTasks = currentData.work.filter(task => task.Project === project);
+                const totalProgress = projectTasks.reduce((sum, task) => 
+                    sum + (parseFloat(task.Progress) || 0), 0) / projectTasks.length || 0;
+                
+                return `
+                    <div class="goal-container">
+                        <div class="goal-header">
+                            <div class="goal-title">${project}</div>
+                            <div class="goal-progress">
+                                <div class="goal-status">${totalProgress.toFixed(0)}% complete</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${totalProgress}%;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Update tasks list
+            updateTasksList();
+        }
+
+        function updateTasksList() {
+            const container = document.getElementById('tasksContainer');
+            const tasks = currentData.work.filter(item => item.Task);
+            
+            container.innerHTML = tasks.map(task => `
+                <div class="task-item">
+                    <div class="task-info">
+                        <div class="task-name">${task.Task}</div>
+                        <div class="task-progress">
+                            <div class="task-progress-fill" style="width: ${task.Progress}%;"></div>
+                        </div>
+                        <div>Project: ${task.Project}</div>
+                    </div>
+                    <div class="task-actions">
+                        <button class="task-btn" onclick="editTask('${task.Task}')"><i class="fas fa-edit"></i></button>
+                        <button class="task-btn" onclick="completeTask('${task.Task}')"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function saveTask() {
+            const project = document.getElementById('taskProject').value;
+            const name = document.getElementById('taskName').value;
+            const progress = document.getElementById('taskProgress').value;
+            
+            if (!project || !name) {
+                showNotification('error', 'Project and task name are required');
+                return;
+            }
+            
+            const taskData = {
+                Project: project,
+                Task: name,
+                Progress: progress || 0,
+                Status: 'In Progress'
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'work', data: taskData });
+                showNotification('success', 'Task saved successfully!');
+                
+                // Clear form
+                document.getElementById('taskName').value = '';
+                document.getElementById('taskProgress').value = '0';
+                
+                // Reload data
+                const work = await apiCall({ action: 'get', category: 'work', limit: 10 });
+                currentData.work = work.data;
+                updateProjectsList();
+                populateTable('workHistoryTable', currentData.work, ['Date', 'Project', 'Task', 'Timespent']);
+                
+            } catch (error) {
+                showNotification('error', 'Error saving task: ' + error.message);
+            }
+        }
+
+        async function saveStudySession() {
+            const date = document.getElementById('studyDate').value || new Date().toISOString().split('T')[0];
+            const subject = document.getElementById('studySubject').value;
+            const topic = document.getElementById('studyTopic').value;
+            const time = document.getElementById('studyTime').value;
+            const progress = document.getElementById('studyProgress').value;
+            const notes = document.getElementById('studyNotes').value;
+            
+            if (!subject || !time) {
+                showNotification('error', 'Subject and time are required');
+                return;
+            }
+            
+            const studyData = {
+                Subject: subject,
+                Topic: topic,
+                Timespent: time,
+                Progress: progress || 0,
+                Notes: notes
+            };
+            
+            try {
+                await apiCall({ action: 'add', category: 'study', data: studyData });
+                showNotification('success', 'Study session saved!');
+                
+                // Clear form
+                document.getElementById('studyTopic').value = '';
+                document.getElementById('studyTime').value = '';
+                document.getElementById('studyProgress').value = '';
+                document.getElementById('studyNotes').value = '';
+                
+                // Reload data
+                const study = await apiCall({ action: 'get', category: 'study', limit: 10 });
+                currentData.study = study.data;
+                populateTable('studyHistoryTable', currentData.study, ['Date', 'Subject', 'Timespent', 'Progress']);
+                updateStudyDashboard();
+                
+            } catch (error) {
+                showNotification('error', 'Error saving session: ' + error.message);
+            }
+        }
+
+        async function saveStudyGoals() {
+            const hours = document.getElementById('weeklyStudyGoal').value;
+            
+            try {
+                await apiCall({
+                    action: 'add',
+                    category: 'goals',
+                    data: {
+                        Category: 'study',
+                        GoalName: 'Weekly Study',
+                        TargetValue: hours
+                    }
+                });
+                showNotification('success', 'Study goals saved!');
+                updateStudyDashboard();
+            } catch (error) {
+                showNotification('error', 'Error saving goals: ' + error.message);
+            }
+        }
+
+        function updateStudyDashboard() {
+            // Calculate weekly study time
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            const weeklySessions = currentData.study.filter(session => {
+                const sessionDate = new Date(session.Date || session.Timestamp);
+                return sessionDate >= oneWeekAgo;
+            });
+            
+            const totalHours = weeklySessions.reduce((sum, session) => 
+                sum + (parseFloat(session.Timespent) || 0), 0);
+            
+            const goalHours = parseFloat(document.getElementById('weeklyStudyGoal').value) || 15;
+            const progress = goalHours > 0 ? Math.min(100, (totalHours / goalHours) * 100) : 0;
+            
+            // Update weekly progress
+            document.querySelector('#study .goal-status').textContent = 
+                `${totalHours.toFixed(1)} / ${goalHours} hours`;
+            document.querySelector('#study .progress-fill').style.width = `${progress}%`;
+            
+            // Update study summary card
+            document.getElementById('studySummary').querySelector('.summary-value').textContent = 
+                `${totalHours.toFixed(1)} hrs`;
+            document.getElementById('studySummary').querySelector('.summary-goal').textContent = 
+                `Goal: ${goalHours} hrs`;
+            document.getElementById('studyProgress').style.width = `${progress}%`;
+            document.getElementById('studyStatus').textContent = 
+                `${weeklySessions.length} sessions`;
+        }
+
+        function populateTable(tableId, data, columns) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            // Clear existing rows (except header)
+            while (table.rows.length > 1) {
+                table.deleteRow(1);
+            }
+            
+            if (data.length === 0) {
+                const row = table.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = columns.length;
+                cell.textContent = 'No data available';
+                cell.style.textAlign = 'center';
+                return;
+            }
+            
+            // Add new rows
+            data.forEach(item => {
+                const row = table.insertRow();
+                columns.forEach(column => {
+                    const cell = row.insertCell();
+                    const value = item[column] || '';
+                    
+                    // Format numbers with 2 decimals
+                    if (typeof value === 'number' && value % 1 !== 0) {
+                        cell.textContent = value.toFixed(2);
+                    } 
+                    // Format P/L values
+                    else if (column === 'P/L') {
+                        cell.textContent = value >= 0 ? `+$${value.toFixed(2)}` : `-$${Math.abs(value).toFixed(2)}`;
+                        cell.className = value >= 0 ? 'status-positive' : 'status-negative';
+                    }
+                    // Format weight values
+                    else if (column === 'Weight') {
+                        cell.textContent = `${value} lbs`;
+                    }
+                    // Format trend values (for weight)
+                    else if (column === 'Trend') {
+                        cell.textContent = value;
+                        cell.className = value >= 0 ? 'status-negative' : 'status-positive';
+                    }
+                    // Format time values
+                    else if (column === 'Timespent') {
+                        cell.textContent = `${value} hrs`;
+                    }
+                    // Format progress values
+                    else if (column === 'Progress') {
+                        cell.textContent = `${value}%`;
+                    }
+                    else {
+                        cell.textContent = value;
+                    }
+                });
+            });
+        }
+
+        function updateDashboard() {
+            // Trading Summary
+            const tradingCard = document.getElementById('tradingSummary');
+            if (currentData.accounts.length > 0) {
+                const totalBalance = currentData.accounts.reduce((sum, acc) => sum + parseFloat(acc.Balance), 0);
+                tradingCard.querySelector('.summary-value').textContent = `$${totalBalance.toFixed(2)}`;
+                
+                if (currentData.goals.trading) {
+                    const goalAmount = parseFloat(currentData.goals.trading.TargetValue) || 0;
+                    const progress = goalAmount > 0 ? Math.min(100, (totalBalance / goalAmount) * 100) : 0;
+                    tradingCard.querySelector('.summary-goal').textContent = `Goal: $${goalAmount.toFixed(2)}`;
+                    tradingCard.querySelector('.progress-fill').style.width = `${progress}%`;
+                    
+                    const dailyGoal = parseFloat(currentData.goals.trading.Daily) || 0;
+                    const status = dailyGoal > 0 ? `$${dailyGoal.toFixed(2)} daily target` : 'Set a daily goal';
+                    tradingCard.querySelector('.summary-status').textContent = status;
+                }
+            }
+            
+            // Weight Summary
+            const weightCard = document.getElementById('weightSummary');
+            if (currentData.weight.length > 0) {
+                const latestWeight = parseFloat(currentData.weight[0].Weight) || 0;
+                weightCard.querySelector('.summary-value').textContent = `${latestWeight.toFixed(1)} lbs`;
+                
+                if (currentData.goals.weight) {
+                    const targetWeight = parseFloat(currentData.goals.weight.TargetValue) || 0;
+                    const startWeight = parseFloat(currentData.goals.weight.StartValue) || latestWeight;
+                    
+                    const totalChange = startWeight - targetWeight;
+                    const currentChange = startWeight - latestWeight;
+                    const progress = totalChange > 0 ? (currentChange / totalChange) * 100 : 0;
+                    
+                    weightCard.querySelector('.summary-goal').textContent = `Goal: ${targetWeight.toFixed(1)} lbs`;
+                    weightCard.querySelector('.progress-fill').style.width = `${progress}%`;
+                    weightCard.querySelector('.summary-status').textContent = 
+                        `${currentChange.toFixed(1)} lbs ${currentChange >= 0 ? 'lost' : 'gained'}`;
+                }
+            }
+            
+            // Nutrition Summary (updated in updateNutritionDashboard)
+            updateNutritionDashboard();
+            
+            // Budget Summary
+            const budgetCard = document.getElementById('budgetSummary');
+            const monthlyBudget = parseFloat(document.getElementById('monthlyBudget').value) || 3000;
+            budgetCard.querySelector('.summary-goal').textContent = `Goal: $${monthlyBudget.toFixed(2)}`;
+            
+            // Study Summary (updated in updateStudyDashboard)
+            updateStudyDashboard();
+        }
+
+        function initializeCharts() {
+            // Trading Chart
+            new Chart(document.getElementById('tradingChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{
+                    label: 'Account Balance',
+                    data: [],
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Weight Chart
+            new Chart(document.getElementById('weightChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{
+                    label: 'Weight',
+                    data: [],
+                    borderColor: '#f72585',
+                    backgroundColor: 'rgba(247, 37, 133, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Nutrition Chart
+            new Chart(document.getElementById('nutritionChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{
+                    label: 'Calories',
+                    data: [],
+                    backgroundColor: '#4cc9f0'
+                }]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Budget Chart
+            new Chart(document.getElementById('budgetChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#4361ee', '#7209b7', '#f72585', '#f8961e', '#4cc9f0'
+                    ]
+                }]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Work Chart
+            new Chart(document.getElementById('workChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{
+                    label: 'Hours',
+                    data: [],
+                    backgroundColor: '#f8961e'
+                }]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Study Chart
+            new Chart(document.getElementById('studyChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{
+                    label: 'Study Time',
+                    data: [],
+                    borderColor: '#7209b7',
+                    backgroundColor: 'rgba(114, 9, 183, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            updateCharts();
+        }
+        
+        function updateCharts() {
+            // Trading Chart
+            if (currentData.trading.length > 0) {
+                const tradingChart = Chart.getChart('tradingChart');
+                const dailyProfit = {};
+                
+                currentData.trading.forEach(trade => {
+                    const date = trade.Date || trade.Timestamp.split('T')[0];
+                    if (!dailyProfit[date]) dailyProfit[date] = 0;
+                    dailyProfit[date] += parseFloat(trade['P/L']) || 0;
+                });
+                
+                const dates = Object.keys(dailyProfit).sort();
+                let cumulative = 0;
+                const cumulativeProfits = dates.map(date => {
+                    cumulative += dailyProfit[date];
+                    return cumulative;
+                });
+                
+                tradingChart.data.labels = dates;
+                tradingChart.data.datasets[0].data = cumulativeProfits;
+                tradingChart.update();
+            }
+            
+            // Weight Chart
+            if (currentData.weight.length > 0) {
+                const weightChart = Chart.getChart('weightChart');
+                const sortedWeights = [...currentData.weight]
+                    .sort((a, b) => new Date(a.Date || a.Timestamp) - new Date(b.Date || b.Timestamp));
+                
+                weightChart.data.labels = sortedWeights.map(entry => entry.Date || entry.Timestamp.split('T')[0]);
+                weightChart.data.datasets[0].data = sortedWeights.map(entry => parseFloat(entry.Weight));
+                weightChart.update();
+            }
+            
+            // Nutrition Chart
+            if (currentData.nutrition.length > 0) {
+                const nutritionChart = Chart.getChart('nutritionChart');
+                const dailyCalories = {};
+                
+                currentData.nutrition.forEach(meal => {
+                    const date = meal.Date || meal.Timestamp.split('T')[0];
+                    if (!dailyCalories[date]) dailyCalories[date] = 0;
+                    dailyCalories[date] += parseFloat(meal.Calories) || 0;
+                });
+                
+                nutritionChart.data.labels = Object.keys(dailyCalories).sort();
+                nutritionChart.data.datasets[0].data = Object.values(dailyCalories);
+                nutritionChart.update();
+            }
+            
+            // Budget Chart
+            if (currentData.budget.length > 0) {
+                const budgetChart = Chart.getChart('budgetChart');
+                const categories = [...new Set(currentData.budget.map(t => t.Category))];
+                const spending = {};
+                
+                categories.forEach(cat => {
+                    spending[cat] = currentData.budget
+                        .filter(t => t.Category === cat)
+                        .reduce((sum, t) => sum + Math.abs(parseFloat(t.Amount) || 0), 0);
+                });
+                
+                budgetChart.data.labels = categories;
+                budgetChart.data.datasets[0].data = Object.values(spending);
+                budgetChart.update();
+            }
+            
+            // Work Chart
+            if (currentData.work.length > 0) {
+                const workChart = Chart.getChart('workChart');
+                const projects = [...new Set(currentData.work.map(t => t.Project))];
+                const timeSpent = {};
+                
+                projects.forEach(proj => {
+                    timeSpent[proj] = currentData.work
+                        .filter(t => t.Project === proj)
+                        .reduce((sum, t) => sum + (parseFloat(t.Timespent) || 0), 0);
+                });
+                
+                workChart.data.labels = projects;
+                workChart.data.datasets[0].data = Object.values(timeSpent);
+                workChart.update();
+            }
+            
+            // Study Chart
+            if (currentData.study.length > 0) {
+                const studyChart = Chart.getChart('studyChart');
+                const dailyStudy = {};
+                
+                currentData.study.forEach(session => {
+                    const date = session.Date || session.Timestamp.split('T')[0];
+                    if (!dailyStudy[date]) dailyStudy[date] = 0;
+                    dailyStudy[date] += parseFloat(session.Timespent) || 0;
+                });
+                
+                studyChart.data.labels = Object.keys(dailyStudy).sort();
+                studyChart.data.datasets[0].data = Object.values(dailyStudy);
+                studyChart.update();
+            }
+        }
+
+        function showNotification(type, message) {
+            const notification = document.getElementById(`${type}Notification`);
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        function showLoading() {
+            document.querySelectorAll('.history-table tbody').forEach(tbody => {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">Loading...</td></tr>';
+            });
+        }
+        
+        function hideLoading() {
+            // Handled by individual table updates
+        }
+    </script>
+</body>
+</html>
