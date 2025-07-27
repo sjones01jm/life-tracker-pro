@@ -1235,99 +1235,325 @@
     </div>
 
     <script>
-        // Configuration
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzy9UilOpudYCgT9OkgssO2pvnWFBe2bpIk09t7MquJcvrIV9EocTO3wtmb950VxmGRzg/exec'; // Replace with your deployed web app URL
+        // ← Replace with your deployed Apps Script Web‑App URL:
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzy9UilOpudYCgT9OkgssO2pvnWFBe2bpIk09t7MquJcvrIV9EocTO3wtmb950VxmGRzg/exec';
+
+        // JSONP helper: injects <script>?action=…&callback=…
+        function jsonpCall(action, params, callbackName) {
+            const q = new URLSearchParams({ action, callback: callbackName });
+            for (let k in params) {
+            const v = params[k];
+            q.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
+            }
+            const s = document.createElement('script');
+            s.src = API_URL + '?' + q.toString();
+            document.body.appendChild(s);
+            s.onload = () => document.body.removeChild(s);
+        }
+
+        // Local cache
         let currentData = {
-            trading: [],
-            weight: [],
-            nutrition: [],
-            budget: [],
-            work: [],
-            study: [],
-            accounts: [],
-            goals: {}
+            trading: [], weight: [], nutrition: [],
+            budget: [], work: [], study: [],
+            accounts: [], goals: {}
         };
-        
-        // Initialize app
-        // On page load, fetch all sections
+
+        // ─── On load: fetch everything, wire buttons, init charts ──────
         document.addEventListener('DOMContentLoaded', () => {
-            apiCall('get',         { category:'trading', limit:10 },    'onTradingData');
-            apiCall('get',         { category:'weight',  limit:10 },    'onWeightData');
-            apiCall('get',         { category:'nutrition',limit:10 },    'onNutritionData');
-            apiCall('get',         { category:'budget',  limit:10 },    'onBudgetData');
-            apiCall('get',         { category:'work',    limit:10 },    'onWorkData');
-            apiCall('get',         { category:'study',   limit:10 },    'onStudyData');
-            apiCall('getaccounts', {},                               'onAccountsData');
-            apiCall('getgoals',    {},                               'onGoalsData');
+            setupTabs();
+            jsonpCall('get',          { category:'trading',   limit:10 }, 'onTradingData');
+            jsonpCall('get',          { category:'weight',    limit:10 }, 'onWeightData');
+            jsonpCall('get',          { category:'nutrition', limit:10 }, 'onNutritionData');
+            jsonpCall('get',          { category:'budget',    limit:10 }, 'onBudgetData');
+            jsonpCall('get',          { category:'work',      limit:10 }, 'onWorkData');
+            jsonpCall('get',          { category:'study',     limit:10 }, 'onStudyData');
+            jsonpCall('getaccounts',  {},                              'onAccountsData');
+            jsonpCall('getgoals',     {},                              'onGoalsData');
+            setupEventListeners();
+            initializeCharts();
         });
 
+        // ─── Tabs ─────────────────────────────────────────────────────
         function setupTabs() {
             document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab, .section').forEach(el => el.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
-                });
+            tab.onclick = () => {
+                document.querySelectorAll('.tab, .section')
+                .forEach(el=>el.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            };
             });
         }
 
-        async function loadInitialData() {
-            try {
-                showLoading();
-                
-                const [trades, weights, nutrition, budget, work, study, accounts, goals] = await Promise.all([
-                    apiCall({ action: 'get', category: 'trading', limit: 10 }),
-                    apiCall({ action: 'get', category: 'weight', limit: 10 }),
-                    apiCall({ action: 'get', category: 'nutrition', limit: 10 }),
-                    apiCall({ action: 'get', category: 'budget', limit: 10 }),
-                    apiCall({ action: 'get', category: 'work', limit: 10 }),
-                    apiCall({ action: 'get', category: 'study', limit: 10 }),
-                    apiCall({ action: 'getAccounts' }),
-                    apiCall({ action: 'getGoals' })
-                ]);
-                
-                currentData.trading   = trades.data   || [];
-                currentData.weight    = weights.data  || [];
-                currentData.nutrition = nutrition.data|| [];
-                currentData.budget    = budget.data   || [];
-                currentData.work      = work.data     || [];
-                currentData.study     = study.data    || [];
-                currentData.accounts  = accounts.data || [];
-                currentData.goals     = processGoals(goals.data);
-
-                populateTable('tradingHistoryTable',   currentData.trading,   ['Date','Instrument','P/L','Account']);
-                populateTable('weightHistoryTable',    currentData.weight,    ['Date','Weight','Trend']);
-                populateTable('nutritionHistoryTable', currentData.nutrition, ['Date','Meal','Calories','Protein']);
-                populateTable('budgetHistoryTable',    currentData.budget,    ['Date','Description','Amount','Category']);
-                populateTable('workHistoryTable',      currentData.work,      ['Date','Project','Task','Timespent']);
-                populateTable('studyHistoryTable',     currentData.study,     ['Date','Subject','Timespent','Progress']);
-
-                updateAccountDropdown(currentData.accounts);
-                renderAccounts(currentData.accounts);
-                updateNutritionDashboard();
-            } catch (error) {
-                showNotification('error', 'Failed to load data: ' + error.message);
-            } finally {
-                hideLoading();
+        // ─── JSONP Read Callbacks ─────────────────────────────────────
+        function onTradingData(r) {
+            if (r.status===200) {
+            currentData.trading = r.data;
+            populateTable('tradingHistoryTable', r.data, ['Date','Instrument','P/L','Account']);
+            updateDashboard();
             }
         }
-        
-        function processGoals(goals) {
-            const map = {};
-            (goals||[]).forEach(g => { map[g.Category] = g; });
-            return map;
+        function onWeightData(r) {
+            if (r.status===200) {
+            currentData.weight = r.data;
+            populateTable('weightHistoryTable', r.data, ['Date','Weight','Trend']);
+            updateDashboard();
+            }
+        }
+        function onNutritionData(r) {
+            if (r.status===200) {
+            currentData.nutrition = r.data;
+            populateTable('nutritionHistoryTable', r.data, ['Date','Meal','Calories','Protein']);
+            updateNutritionDashboard();
+            updateDashboard();
+            }
+        }
+        function onBudgetData(r) {
+            if (r.status===200) {
+            currentData.budget = r.data;
+            populateTable('budgetHistoryTable', r.data, ['Date','Description','Amount','Category']);
+            updateDashboard();
+            }
+        }
+        function onWorkData(r) {
+            if (r.status===200) {
+            currentData.work = r.data;
+            populateTable('workHistoryTable', r.data, ['Date','Project','Task','Timespent']);
+            updateProjectsList();
+            updateDashboard();
+            }
+        }
+        function onStudyData(r) {
+            if (r.status===200) {
+            currentData.study = r.data;
+            populateTable('studyHistoryTable', r.data, ['Date','Subject','Timespent','Progress']);
+            updateStudyDashboard();
+            updateDashboard();
+            }
+        }
+        function onAccountsData(r) {
+            if (r.status===200) {
+            currentData.accounts = r.data;
+            updateAccountDropdown(r.data);
+            renderAccounts(r.data);
+            updateDashboard();
+            }
+        }
+        function onGoalsData(r) {
+            if (r.status===200) {
+            currentData.goals = processGoals(r.data);
+            updateDashboard();
+            }
         }
 
-        async function apiCall(payload) {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+        // ─── JSONP Write Callbacks & Handlers ─────────────────────────
+        function addAccount() {
+            const name = prompt('New account name:');
+            if (!name) return;
+            jsonpCall('addaccount', { data:{ name, type:'Trading', currency:'USD', balance:0 } }, 'onAfterAddAccount');
+        }
+        function onAfterAddAccount(r) {
+            if (r.status===200) jsonpCall('getaccounts', {}, 'onAccountsData');
+            else showNotification('error', r.error);
+        }
+
+        function saveTrade() {
+            const acct  = document.getElementById('tradeAccount').value;
+            const sym   = document.getElementById('tradeSymbol').value;
+            const ent   = document.getElementById('tradeEntry').value;
+            const ext   = document.getElementById('tradeExit').value;
+            const qty   = document.getElementById('tradeSize').value;
+            const pl    = document.getElementById('tradeResult').value;
+            const notes = document.getElementById('tradeNotes').value;
+            if (!acct||!sym||!qty||!pl) return showNotification('error','Fill in all trade fields');
+            jsonpCall('add', {
+            category:'trading',
+            data:{ Account:acct, Instrument:sym, Entry:ent, Exit:ext, Quantity:qty, 'P/L':pl, Comments:notes }
+            }, 'onAfterSaveTrade');
+        }
+        function onAfterSaveTrade(r) {
+            if (r.status===200) {
+            showNotification('success','Trade saved');
+            jsonpCall('get',{category:'trading',limit:10},'onTradingData');
+            jsonpCall('getaccounts',{},'onAccountsData');
+            } else showNotification('error', r.error);
+        }
+
+        function saveWeight() {
+            const w  = document.getElementById('currentWeight').value;
+            const tg = document.getElementById('weightGoal').value;
+            const td = document.getElementById('targetDate').value;
+            if (!w) return showNotification('error','Enter your weight');
+            jsonpCall('add',{
+            category:'weight', data:{ Weight:w, TargetWeight:tg, TargetDate:td }
+            }, 'onAfterSaveWeight');
+        }
+        function onAfterSaveWeight(r) {
+            if (r.status===200) {
+            showNotification('success','Weight saved');
+            jsonpCall('get',{category:'weight',limit:10},'onWeightData');
+            } else showNotification('error',r.error);
+        }
+
+        function saveMeal() {
+            const m = document.getElementById('mealType').value;
+            const f = document.getElementById('foodDescription').value;
+            const c = document.getElementById('calories').value;
+            if (!m||!f||!c) return showNotification('error','Complete meal fields');
+            jsonpCall('add',{category:'nutrition',data:{
+            Meal:m, Food:f, Calories:c,
+            Protein:document.getElementById('protein').value||0,
+            Carbs:  document.getElementById('carbs').value||0,
+            Fats:   document.getElementById('fats').value||0,
+            FastingHours:document.getElementById('fastingHours').value||0
+            }}, 'onAfterSaveMeal');
+        }
+        function onAfterSaveMeal(r) {
+            if (r.status===200) {
+            showNotification('success','Meal saved');
+            jsonpCall('get',{category:'nutrition',limit:10},'onNutritionData');
+            } else showNotification('error',r.error);
+        }
+
+        function saveNutritionGoals() {
+            const cal  = document.getElementById('dailyCalories').value;
+            const prot = document.getElementById('proteinGoal').value;
+            const carb = document.getElementById('carbsGoal').value;
+            const fat  = document.getElementById('fatsGoal').value;
+            jsonpCall('add',{category:'goals',data:{
+            Category:'nutrition', GoalName:'Daily Nutrition',
+            TargetValue:`${cal}|${prot}|${carb}|${fat}`
+            }}, 'onAfterSaveNutGoals');
+        }
+        function onAfterSaveNutGoals(r) {
+            if (r.status===200) {
+            showNotification('success','Nutrition goals set');
+            updateNutritionDashboard(); updateDashboard();
+            } else showNotification('error',r.error);
+        }
+
+        function saveTransaction() {
+            const d    = document.getElementById('transactionDate').value || new Date().toISOString().split('T')[0];
+            const desc = document.getElementById('transactionDescription').value;
+            const cat  = document.getElementById('transactionCategory').value;
+            const amt  = document.getElementById('transactionAmount').value;
+            const acc  = document.getElementById('transactionAccount').value;
+            if (!desc||!amt) return showNotification('error','Fill transaction fields');
+            jsonpCall('add',{category:'budget',data:{
+            Date:d, Description:desc, Category:cat, Amount:amt, Account:acc
+            }}, 'onAfterSaveTxn');
+        }
+        function onAfterSaveTxn(r) {
+            if (r.status===200) {
+            showNotification('success','Transaction saved');
+            jsonpCall('get',{category:'budget',limit:10},'onBudgetData');
+            } else showNotification('error',r.error);
+        }
+
+        function saveBudget() {
+            const mb = document.getElementById('monthlyBudget').value;
+            jsonpCall('add',{category:'goals',data:{
+            Category:'budget', GoalName:'Monthly Budget', TargetValue:mb
+            }}, 'onAfterSaveBudget');
+        }
+        function onAfterSaveBudget(r) {
+            if (r.status===200) showNotification('success','Budget goal set');
+            else showNotification('error',r.error);
+            updateDashboard();
+        }
+
+        function saveProject() {
+            const nm  = document.getElementById('projectName').value;
+            const desc= document.getElementById('projectDescription').value;
+            const sd  = document.getElementById('projectStart').value;
+            const ed  = document.getElementById('projectEnd').value;
+            if (!nm) return showNotification('error','Project name required');
+            jsonpCall('add',{category:'work',data:{
+            Project:nm, Description:desc, StartDate:sd, EndDate:ed,
+            Progress:0, Status:'Active'
+            }}, 'onAfterSaveProj');
+        }
+        function onAfterSaveProj(r) {
+            if (r.status===200) {
+            showNotification('success','Project saved');
+            jsonpCall('get',{category:'work',limit:10},'onWorkData');
+            } else showNotification('error',r.error);
+        }
+
+        function saveTask() {
+            const pr = document.getElementById('taskProject').value;
+            const nm = document.getElementById('taskName').value;
+            const pg = document.getElementById('taskProgress').value||0;
+            if (!pr||!nm) return showNotification('error','Project & task required');
+            jsonpCall('add',{category:'work',data:{
+            Project:pr, Task:nm, Progress:pg, Status:'In Progress'
+            }}, 'onAfterSaveTask');
+        }
+        function onAfterSaveTask(r) {
+            if (r.status===200) {
+            showNotification('success','Task saved');
+            jsonpCall('get',{category:'work',limit:10},'onWorkData');
+            } else showNotification('error',r.error);
+        }
+
+        function saveStudySession() {
+            const dt   = document.getElementById('studyDate').value||new Date().toISOString().split('T')[0];
+            const sub  = document.getElementById('studySubject').value;
+            const top  = document.getElementById('studyTopic').value;
+            const hrs  = document.getElementById('studyTime').value;
+            const pg   = document.getElementById('studyProgress').value||0;
+            const notes= document.getElementById('studyNotes').value;
+            if (!sub||!hrs) return showNotification('error','Subject & time required');
+            jsonpCall('add',{category:'study',data:{
+            Date:dt, Subject:sub, Topic:top, Timespent:hrs, Progress:pg, Notes:notes
+            }}, 'onAfterSaveStudy');
+        }
+        function onAfterSaveStudy(r) {
+            if (r.status===200) {
+            showNotification('success','Session saved');
+            jsonpCall('get',{category:'study',limit:10},'onStudyData');
+            } else showNotification('error',r.error);
+        }
+
+        function saveStudyGoals() {
+            const w = document.getElementById('weeklyStudyGoal').value||0;
+            jsonpCall('add',{category:'goals',data:{
+            Category:'study', GoalName:'Weekly Study', TargetValue:w
+            }}, 'onAfterSaveStudyGoals');
+        }
+        function onAfterSaveStudyGoals(r) {
+            if (r.status===200) showNotification('success','Study goal set');
+            else showNotification('error',r.error);
+            updateStudyDashboard(); updateDashboard();
+        }
+
+        // ─── Data → UI helpers ──────────────────────────────────────
+        function populateTable(tableId, data, cols) {
+            const t = document.getElementById(tableId);
+            if (!t) return;
+            while (t.rows.length>1) t.deleteRow(1);
+            if (!data || data.length===0) {
+            const r = t.insertRow(), c = r.insertCell();
+            c.colSpan = cols.length; c.textContent = 'No data'; return;
+            }
+            data.forEach(item=>{
+            const row = t.insertRow();
+            cols.forEach(col=>{
+                const cell = row.insertCell();
+                if (col==='P/L') {
+                const num = parseFloat(item[col])||0;
+                cell.textContent = (num>=0?'+':'-')+'$'+Math.abs(num).toFixed(2);
+                } else if (col==='Weight') {
+                cell.textContent = `${item[col]||''} lbs`;
+                } else if (col==='Timespent') {
+                cell.textContent = `${item[col]||''} hrs`;
+                } else if (col==='Progress') {
+                cell.textContent = `${item[col]||0}%`;
+                } else {
+                cell.textContent = item[col] ?? '';
+                }
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-            if (json.status >= 400) throw new Error(json.error || 'API Error');
-            return json;
+            });
         }
 
         function updateAccountDropdown(accounts) {
@@ -1340,533 +1566,203 @@
 
         function renderAccounts(accounts) {
             const c = document.getElementById('accountsContainer');
-            if (!accounts.length) {
-                c.innerHTML = '<p>No accounts yet. Add one above.</p>';
-                return;
+            if (!c) return;
+            if (accounts.length===0) {
+            c.innerHTML = '<p>No accounts yet.</p>'; return;
             }
-            c.innerHTML = accounts.map(a => `
-                <div class="account-badge">
-                    <i class="fas fa-wallet"></i> ${a.Name}
-                    <span class="account-balance">$${(parseFloat(a.Balance)||0).toFixed(2)}</span>
-                </div>
+            c.innerHTML = accounts.map(a=>`
+            <div class="account-badge">
+                <i class="fas fa-wallet"></i> ${a.Name}
+                <span class="account-balance">$${(parseFloat(a.Balance)||0).toFixed(2)}</span>
+            </div>
             `).join('');
+        }
+
+        function processGoals(goals) {
+            const m = {};
+            (goals||[]).forEach(g=>{ m[g.Category]=g; });
+            return m;
         }
 
         function setupEventListeners() {
-            // Trading
-            document.getElementById('addAccountBtn').addEventListener('click', addAccount);
-            document.getElementById('saveTradeBtn').addEventListener('click', saveTrade);
-            // Weight
-            document.getElementById('saveWeightBtn').addEventListener('click', saveWeight);
-            // Nutrition
-            document.getElementById('saveMealBtn').addEventListener('click', saveMeal);
-            document.getElementById('saveNutritionGoalsBtn').addEventListener('click', saveNutritionGoals);
-            // Budget
-            document.getElementById('saveTransactionBtn').addEventListener('click', saveTransaction);
-            document.getElementById('saveBudgetBtn').addEventListener('click', saveBudget);
-            // Work
-            document.getElementById('saveProjectBtn').addEventListener('click', saveProject);
-            document.getElementById('saveTaskBtn').addEventListener('click', saveTask);
-            // Study
-            document.getElementById('saveStudySessionBtn').addEventListener('click', saveStudySession);
-            document.getElementById('saveStudyGoalsBtn').addEventListener('click', saveStudyGoals);
+            document.getElementById('addAccountBtn')       .onclick = addAccount;
+            document.getElementById('saveTradeBtn')        .onclick = saveTrade;
+            document.getElementById('saveWeightBtn')       .onclick = saveWeight;
+            document.getElementById('saveMealBtn')         .onclick = saveMeal;
+            document.getElementById('saveNutritionGoalsBtn').onclick = saveNutritionGoals;
+            document.getElementById('saveTransactionBtn')  .onclick = saveTransaction;
+            document.getElementById('saveBudgetBtn')       .onclick = saveBudget;
+            document.getElementById('saveProjectBtn')      .onclick = saveProject;
+            document.getElementById('saveTaskBtn')         .onclick = saveTask;
+            document.getElementById('saveStudySessionBtn') .onclick = saveStudySession;
+            document.getElementById('saveStudyGoalsBtn')   .onclick = saveStudyGoals;
         }
 
-        // ---- CRUD Handlers ----
-
-        async function addAccount() {
-            const name = prompt('Enter account name:');
-            if (!name) return;
-            try {
-                await apiCall({ action:'addAccount', data:{ name, type:'Trading', currency:'USD', balance:0 } });
-                showNotification('success','Account added!');
-                const resp = await apiCall({ action:'getAccounts' });
-                currentData.accounts = resp.data;
-                updateAccountDropdown(currentData.accounts);
-                renderAccounts(currentData.accounts);
-                updateDashboard();
-            } catch(e) { showNotification('error','Add account failed: '+e.message); }
-        }
-
-        async function saveTrade() {
-            const account = document.getElementById('tradeAccount').value;
-            const symbol  = document.getElementById('tradeSymbol').value;
-            const entry   = document.getElementById('tradeEntry').value;
-            const exit    = document.getElementById('tradeExit').value;
-            const size    = document.getElementById('tradeSize').value;
-            const result  = document.getElementById('tradeResult').value;
-            const notes   = document.getElementById('tradeNotes').value;
-            if (!account||!symbol||!size||!result) {
-                return showNotification('error','Please fill all fields');
-            }
-            const data = { Account:account, Instrument:symbol, Quantity:size, Entry:entry, Exit:exit, 'P/L':result, Comments:notes };
-            try {
-                await apiCall({ action:'add', category:'trading', data });
-                showNotification('success','Trade saved!');
-                document.querySelectorAll('#trading input, #trading textarea').forEach(i=>i.value='');
-                const resp = await apiCall({ action:'get', category:'trading', limit:10 });
-                currentData.trading = resp.data;
-                populateTable('tradingHistoryTable', currentData.trading, ['Date','Instrument','P/L','Account']);
-                // Refresh balances
-                const accResp = await apiCall({ action:'getAccounts' });
-                currentData.accounts = accResp.data;
-                renderAccounts(currentData.accounts);
-                updateDashboard();
-            } catch(e) { showNotification('error','Save trade failed: '+e.message); }
-        }
-
-        async function saveWeight() {
-            const weight = document.getElementById('currentWeight').value;
-            const goal   = document.getElementById('weightGoal').value;
-            const date   = document.getElementById('targetDate').value;
-            if (!weight) return showNotification('error','Enter your weight');
-            try {
-                await apiCall({ action:'add', category:'weight', data:{ Weight:weight, TargetWeight:goal, TargetDate:date } });
-                showNotification('success','Weight entry saved');
-                document.getElementById('currentWeight').value = '';
-                const resp = await apiCall({ action:'get', category:'weight', limit:10 });
-                currentData.weight = resp.data;
-                populateTable('weightHistoryTable', currentData.weight, ['Date','Weight','Trend']);
-                updateDashboard();
-            } catch(e) { showNotification('error','Save weight failed: '+e.message); }
-        }
-
-        async function saveMeal() {
-            const m = document.getElementById('mealType').value;
-            const f = document.getElementById('foodDescription').value;
-            const c = document.getElementById('calories').value;
-            if (!m||!f||!c) return showNotification('error','Fill all required fields');
-            const data = {
-                Meal:m, Food:f,
-                Calories:c,
-                Protein:document.getElementById('protein').value||0,
-                Carbs:document.getElementById('carbs').value||0,
-                Fats:document.getElementById('fats').value||0,
-                FastingHours:document.getElementById('fastingHours').value||0
-            };
-            try {
-                await apiCall({ action:'add', category:'nutrition', data });
-                showNotification('success','Meal saved!');
-                ['foodDescription','calories','protein','carbs','fats','fastingHours'].forEach(id=>document.getElementById(id).value='');
-                const resp = await apiCall({ action:'get', category:'nutrition', limit:10 });
-                currentData.nutrition = resp.data;
-                populateTable('nutritionHistoryTable', currentData.nutrition, ['Date','Meal','Calories','Protein']);
-                updateNutritionDashboard();
-                updateDashboard();
-            } catch(e) { showNotification('error','Save meal failed: '+e.message); }
-        }
-
-        async function saveNutritionGoals() {
-            const cal = document.getElementById('dailyCalories').value;
-            const prot= document.getElementById('proteinGoal').value;
-            const carb= document.getElementById('carbsGoal').value;
-            const fat = document.getElementById('fatsGoal').value;
-            try {
-                await apiCall({ action:'add', category:'goals', data:{
-                    Category:'nutrition', GoalName:'Daily Nutrition', TargetValue:`${cal}|${prot}|${carb}|${fat}`
-                }});
-                showNotification('success','Nutrition goals saved');
-                updateNutritionDashboard();
-                updateDashboard();
-            } catch(e){ showNotification('error','Save goals failed: '+e.message); }
-        }
-
-        async function saveTransaction() {
-            const date  = document.getElementById('transactionDate').value || new Date().toISOString().split('T')[0];
-            const desc  = document.getElementById('transactionDescription').value;
-            const cat   = document.getElementById('transactionCategory').value;
-            const amt   = document.getElementById('transactionAmount').value;
-            const acc   = document.getElementById('transactionAccount').value;
-            if (!desc||!amt) return showNotification('error','Fill description and amount');
-            try {
-                await apiCall({ action:'add', category:'budget', data:{
-                    Date:date, Description:desc, Category:cat, Amount:amt, Account:acc
-                }});
-                showNotification('success','Transaction saved');
-                ['transactionDescription','transactionAmount','transactionAccount'].forEach(id=>document.getElementById(id).value='');
-                const resp = await apiCall({ action:'get', category:'budget', limit:10 });
-                currentData.budget = resp.data;
-                populateTable('budgetHistoryTable', currentData.budget, ['Date','Description','Amount','Category']);
-                updateDashboard();
-            } catch(e) { showNotification('error','Save transaction failed: '+e.message); }
-        }
-
-        async function saveBudget() {
-            const amt = document.getElementById('monthlyBudget').value;
-            try {
-                await apiCall({ action:'add', category:'goals', data:{
-                    Category:'budget', GoalName:'Monthly Budget', TargetValue:amt
-                }});
-                showNotification('success','Budget goal saved');
-                updateDashboard();
-            } catch(e){ showNotification('error','Save budget failed: '+e.message); }
-        }
-
-        async function saveProject() {
-            const name = document.getElementById('projectName').value;
-            if (!name) return showNotification('error','Project name is required');
-            try {
-                await apiCall({ action:'add', category:'work', data:{
-                    Project:name,
-                    Description:document.getElementById('projectDescription').value,
-                    StartDate:document.getElementById('projectStart').value,
-                    EndDate:document.getElementById('projectEnd').value,
-                    Progress:0,
-                    Status:'Active'
-                }});
-                showNotification('success','Project saved');
-                ['projectName','projectDescription','projectStart','projectEnd'].forEach(id=>document.getElementById(id).value='');
-                const resp = await apiCall({ action:'get', category:'work', limit:10 });
-                currentData.work = resp.data;
-                updateProjectsList();
-                populateTable('workHistoryTable', currentData.work, ['Date','Project','Task','Timespent']);
-                updateDashboard();
-            } catch(e){ showNotification('error','Save project failed: '+e.message); }
-        }
-
-        function updateProjectsList() {
-            const projects = [...new Set(currentData.work.map(w=>w.Project))];
-            const c = document.getElementById('projectsContainer');
-            const sel = document.getElementById('taskProject');
-            sel.innerHTML = '<option value="">Select project...</option>'
-                + projects.map(p=>`<option value="${p}">${p}</option>`).join('');
-            c.innerHTML = projects.map(proj=>{
-                const tasks = currentData.work.filter(t=>t.Project===proj);
-                const prog  = tasks.reduce((s,t)=>s+parseFloat(t.Progress||0),0)/tasks.length||0;
-                return `
-                    <div class="goal-container">
-                    <div class="goal-header">
-                        <div class="goal-title">${proj}</div>
-                        <div class="goal-progress"><div class="goal-status">${prog.toFixed(0)}% complete</div></div>
-                    </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div>
-                    </div>
-                `;
-            }).join('');
-            updateTasksList();
-        }
-
-        function updateTasksList() {
-            const c = document.getElementById('tasksContainer');
-            const tasks = currentData.work.filter(t=>t.Task);
-            c.innerHTML = tasks.map(task=>`
-                <div class="task-item">
-                <div class="task-info">
-                    <div class="task-name">${task.Task}</div>
-                    <div class="task-progress"><div class="task-progress-fill" style="width:${task.Progress}%"></div></div>
-                    <div>Project: ${task.Project}</div>
-                </div>
-                <div class="task-actions">
-                    <button class="task-btn" onclick="editTask('${task.Task}')"><i class="fas fa-edit"></i></button>
-                    <button class="task-btn" onclick="completeTask('${task.Task}')"><i class="fas fa-check"></i></button>
-                </div>
-                </div>
-            `).join('');
-        }
-
-        async function saveTask() {
-            const proj = document.getElementById('taskProject').value;
-            const name = document.getElementById('taskName').value;
-            const prog = document.getElementById('taskProgress').value || 0;
-            if (!proj||!name) return showNotification('error','Project and task required');
-            try {
-                await apiCall({ action:'add', category:'work', data:{
-                    Project:proj, Task:name, Progress:prog, Status:'In Progress'
-                }});
-                showNotification('success','Task saved');
-                ['taskName','taskProgress'].forEach(id=>document.getElementById(id).value='');
-                const resp = await apiCall({ action:'get', category:'work', limit:10 });
-                currentData.work = resp.data;
-                updateProjectsList();
-                populateTable('workHistoryTable', currentData.work, ['Date','Project','Task','Timespent']);
-                updateDashboard();
-            } catch(e){ showNotification('error','Save task failed: '+e.message); }
-        }
-
-        async function saveStudySession() {
-            const date    = document.getElementById('studyDate').value || new Date().toISOString().split('T')[0];
-            const subject = document.getElementById('studySubject').value;
-            const topic   = document.getElementById('studyTopic').value;
-            const time    = document.getElementById('studyTime').value;
-            const prog    = document.getElementById('studyProgress').value || 0;
-            const notes   = document.getElementById('studyNotes').value;
-            if (!subject||!time) return showNotification('error','Subject and time required');
-            try {
-                await apiCall({ action:'add', category:'study', data:{
-                    Subject:subject, Topic:topic, Timespent:time, Progress:prog, Notes:notes
-                }});
-                showNotification('success','Session saved');
-                ['studyTopic','studyTime','studyProgress','studyNotes'].forEach(id=>document.getElementById(id).value='');
-                const resp = await apiCall({ action:'get', category:'study', limit:10 });
-                currentData.study = resp.data;
-                populateTable('studyHistoryTable', currentData.study, ['Date','Subject','Timespent','Progress']);
-                updateStudyDashboard();
-                updateDashboard();
-            } catch(e){ showNotification('error','Save session failed: '+e.message); }
-        }
-
-        async function saveStudyGoals() {
-            const hrs = document.getElementById('weeklyStudyGoal').value;
-            try {
-                await apiCall({ action:'add', category:'goals', data:{
-                    Category:'study', GoalName:'Weekly Study', TargetValue:hrs
-                }});
-                showNotification('success','Study goals saved');
-                updateStudyDashboard();
-                updateDashboard();
-            } catch(e){ showNotification('error','Save goals failed: '+e.message); }
-        }
-
-        // ---- Dashboard & Charts ----
-
+        // ─── Nutrition dashboard ────────────────────────────────────
         function updateNutritionDashboard() {
             const today = new Date().toISOString().split('T')[0];
             const meals = currentData.nutrition.filter(m=>m.Date===today);
             const sums = meals.reduce((s,m)=>{
-                s.calories += parseFloat(m.Calories)||0;
-                s.protein  += parseFloat(m.Protein)||0;
-                s.carbs    += parseFloat(m.Carbs)||0;
-                s.fats     += parseFloat(m.Fats)||0;
-                return s;
+            s.calories += parseFloat(m.Calories)||0;
+            s.protein  += parseFloat(m.Protein)||0;
+            s.carbs    += parseFloat(m.Carbs)||0;
+            s.fats     += parseFloat(m.Fats)||0;
+            return s;
             },{calories:0,protein:0,carbs:0,fats:0});
+
             document.getElementById('totalCalories').textContent = sums.calories.toFixed(0);
-            document.getElementById('totalProtein').textContent  = sums.protein.toFixed(1)+'g';
-            document.getElementById('totalCarbs').textContent    = sums.carbs.toFixed(1)+'g';
-            document.getElementById('totalFats').textContent     = sums.fats.toFixed(1)+'g';
+            document.getElementById('totalProtein') .textContent = sums.protein.toFixed(1)+'g';
+            document.getElementById('totalCarbs')   .textContent = sums.carbs.toFixed(1)+'g';
+            document.getElementById('totalFats')    .textContent = sums.fats.toFixed(1)+'g';
 
             const mealsCtn = document.getElementById('mealsContainer');
             mealsCtn.innerHTML = meals.map(m=>`
-                <div class="meal-card">
+            <div class="meal-card">
                 <div class="meal-header">
-                    <div class="meal-title">${m.Meal}</div>
-                    <div class="meal-total">${m.Calories} cal</div>
+                <div class="meal-title">${m.Meal}</div>
+                <div class="meal-total">${m.Calories} cal</div>
                 </div>
                 <div class="macro-grid">
-                    <div class="macro-item"><div class="macro-label">Protein</div><div class="macro-value">${m.Protein||0}g</div></div>
-                    <div class="macro-item"><div class="macro-label">Carbs</div><div class="macro-value">${m.Carbs||0}g</div></div>
-                    <div class="macro-item"><div class="macro-label">Fats</div><div class="macro-value">${m.Fats||0}g</div></div>
-                    <div class="macro-item"><div class="macro-label">Fasting</div><div class="macro-value">${m.FastingHours||0}h</div></div>
+                <div class="macro-item"><div class="macro-label">Protein</div><div class="macro-value">${m.Protein||0}g</div></div>
+                <div class="macro-item"><div class="macro-label">Carbs</div><div class="macro-value">${m.Carbs||0}g</div></div>
+                <div class="macro-item"><div class="macro-label">Fats</div><div class="macro-value">${m.Fats||0}g</div></div>
+                <div class="macro-item"><div class="macro-label">Fasting</div><div class="macro-value">${m.FastingHours||0}h</div></div>
                 </div>
-                </div>
+            </div>
             `).join('');
 
             const goalCalories = parseFloat(document.getElementById('dailyCalories').value)||0;
-            const prog = goalCalories>0 ? Math.min(100,(sums.calories/goalCalories)*100):0;
+            const prog = goalCalories>0 ? Math.min(100,(sums.calories/goalCalories)*100) : 0;
             document.getElementById('nutritionSummary').querySelector('.summary-value').textContent = `${sums.calories.toFixed(0)} cal`;
             document.getElementById('nutritionSummary').querySelector('.summary-goal').textContent  = `Goal: ${goalCalories.toFixed(0)} cal`;
             document.getElementById('nutritionProgress').style.width = `${prog}%`;
             document.getElementById('nutritionStatus').textContent  = `${sums.protein.toFixed(1)}g protein`;
         }
 
+        // ─── Study dashboard ────────────────────────────────────────
         function updateStudyDashboard() {
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate()-7);
             const recent = currentData.study.filter(s=>new Date(s.Date)>=oneWeekAgo);
-            const totalHrs = recent.reduce((sum,s)=>sum+(parseFloat(s.Timespent)||0),0);
+            const totalHrs = recent.reduce((sum,s)=>sum + (parseFloat(s.Timespent)||0), 0);
             const goalHrs  = parseFloat(document.getElementById('weeklyStudyGoal').value)||0;
-            const prog     = goalHrs>0?Math.min(100,(totalHrs/goalHrs)*100):0;
-            document.querySelector('#study .goal-status').textContent = `${totalHrs.toFixed(1)} / ${goalHrs} hours`;
-            document.querySelector('#study .progress-fill').style.width = `${prog}%`;
-            document.getElementById('studySummary').querySelector('.summary-value').textContent = `${totalHrs.toFixed(1)} hrs`;
-            document.getElementById('studySummary').querySelector('.summary-goal').textContent  = `Goal: ${goalHrs} hrs`;
+            const prog     = goalHrs>0 ? Math.min(100,(totalHrs/goalHrs)*100) : 0;
+
+            const summary = document.getElementById('studySummary');
+            summary.querySelector('.summary-value').textContent = `${totalHrs.toFixed(1)} hrs`;
+            summary.querySelector('.summary-goal').textContent  = `Goal: ${goalHrs} hrs`;
             document.getElementById('studyProgress').style.width = `${prog}%`;
             document.getElementById('studyStatus').textContent   = `${recent.length} sessions`;
         }
 
+        // ─── Overall dashboard boxes ────────────────────────────────
         function updateDashboard() {
-            // Trading
+            // Trading summary
             const tc = document.getElementById('tradingSummary');
             if (currentData.accounts.length) {
-                const totalBal = currentData.accounts.reduce((s,a)=>s+parseFloat(a.Balance)||0,0);
-                tc.querySelector('.summary-value').textContent = `$${totalBal.toFixed(2)}`;
-                if (currentData.goals.trading) {
-                    const g = parseFloat(currentData.goals.trading.TargetValue)||0;
-                    const p = g>0?Math.min(100,(totalBal/g)*100):0;
-                    tc.querySelector('.summary-goal').textContent = `Goal: $${g.toFixed(2)}`;
-                    tc.querySelector('.progress-fill').style.width = `${p}%`;
-                    const daily = parseFloat(currentData.goals.trading.Daily)||0;
-                    tc.querySelector('.summary-status').textContent = daily>0?`$${daily.toFixed(2)} daily target`:'Set a daily goal';
-                }
+            const totalBal = currentData.accounts.reduce((s,a)=>s + (parseFloat(a.Balance)||0), 0);
+            tc.querySelector('.summary-value').textContent = `$${totalBal.toFixed(2)}`;
+
+            if (currentData.goals.trading) {
+                const g = parseFloat(currentData.goals.trading.TargetValue)||0;
+                const p = g>0 ? Math.min(100,(totalBal/g)*100) : 0;
+                tc.querySelector('.summary-goal').textContent = `Goal: $${g.toFixed(2)}`;
+                tc.querySelector('.progress-fill').style.width = `${p}%`;
+                const daily = parseFloat(currentData.goals.trading.Daily)||0;
+                tc.querySelector('.summary-status').textContent = daily>0
+                ? `$${daily.toFixed(2)} daily target`
+                : 'Set a daily goal';
+            }
             }
 
-            // Weight
+            // Weight summary
             const wc = document.getElementById('weightSummary');
             if (currentData.weight.length) {
-                const lw = parseFloat(currentData.weight[0].Weight)||0;
-                wc.querySelector('.summary-value').textContent = `${lw.toFixed(1)} lbs`;
-                if (currentData.goals.weight) {
-                    const tw = parseFloat(currentData.goals.weight.TargetValue)||lw;
-                    const sw = parseFloat(currentData.goals.weight.StartValue)||lw;
-                    const total = sw-tw;
-                    const done  = sw-lw;
-                    const p = total>0?(done/total)*100:0;
-                    wc.querySelector('.summary-goal').textContent   = `Goal: ${tw.toFixed(1)} lbs`;
-                    wc.querySelector('.progress-fill').style.width  = `${p}%`;
-                    wc.querySelector('.summary-status').textContent = `${done.toFixed(1)} lbs ${done>=0?'lost':'gained'}`;
-                }
+            const lw = parseFloat(currentData.weight[0].Weight)||0;
+            wc.querySelector('.summary-value').textContent = `${lw.toFixed(1)} lbs`;
+
+            if (currentData.goals.weight) {
+                const tw = parseFloat(currentData.goals.weight.TargetValue)||lw;
+                const sw = parseFloat(currentData.goals.weight.StartValue)||lw;
+                const total = sw - tw;
+                const done  = sw - lw;
+                const p = total>0 ? (done/total)*100 : 0;
+                wc.querySelector('.summary-goal').textContent   = `Goal: ${tw.toFixed(1)} lbs`;
+                wc.querySelector('.progress-fill').style.width  = `${p}%`;
+                wc.querySelector('.summary-status').textContent = `${done.toFixed(1)} lbs ${done>=0?'lost':'gained'}`;
+            }
             }
 
-            // Nutrition & Study & Budget handled by their own updates
-            updateNutritionDashboard();
-            updateStudyDashboard();
+            // Nutrition & study & budget are handled by their own updates
+            // (already called in their callbacks)
 
-            // Budget
-            const bc = document.getElementById('budgetSummary');
-            const mb = parseFloat(document.getElementById('monthlyBudget').value)||0;
-            bc.querySelector('.summary-goal').textContent = `Goal: $${mb.toFixed(2)}`;
         }
 
+        // ─── Chart.js initializations ───────────────────────────────
         function initializeCharts() {
-            // Trading Chart
+            // Trading balance over time
             new Chart(document.getElementById('tradingChart').getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets:[{
-                    label:'Account Balance',
-                    data:[],
-                    borderColor:'#4361ee',
-                    backgroundColor:'rgba(67,97,238,0.1)',
-                    tension:0.3,fill:true
-                }]},
-                options:{responsive:true,maintainAspectRatio:false}
+            type: 'line',
+            data: { labels: [], datasets:[{
+                label:'Balance', data:[], tension:0.3, fill:true
+            }]},
+            options:{responsive:true,maintainAspectRatio:false}
             });
 
-            // Weight Chart
+            // Weight trend
             new Chart(document.getElementById('weightChart').getContext('2d'), {
-                type:'line',
-                data:{labels:[],datasets:[{
-                    label:'Weight',
-                    data:[],
-                    borderColor:'#7209b7',
-                    backgroundColor:'rgba(114,9,183,0.1)',
-                    tension:0.3,fill:true
-                }]},
-                options:{responsive:true,maintainAspectRatio:false}
+            type:'line',
+            data:{labels:[],datasets:[{ label:'Weight', data:[], tension:0.3, fill:true }]},
+            options:{responsive:true,maintainAspectRatio:false}
             });
 
-            // Nutrition Chart
+            // Nutrition bar
             window.nutritionChart = new Chart(document.getElementById('nutritionChart').getContext('2d'), {
-                type:'bar',
-                data:{labels:[],datasets:[{
-                    label:'Daily Calories',
-                    data:[],
-                    borderColor:'#f8961e',
-                    backgroundColor:'rgba(248,150,30,0.1)',
-                    tension:0.3,fill:true
-                }]},
-                options:{responsive:true,maintainAspectRatio:false}
+            type:'bar',
+            data:{labels:[],datasets:[{ label:'Calories', data:[], fill:true }]},
+            options:{responsive:true,maintainAspectRatio:false}
             });
 
-            // Budget Chart
+            // Budget pie
             new Chart(document.getElementById('budgetChart').getContext('2d'), {
-                type:'pie',
-                data:{labels:[],datasets:[{
-                    label:'Spending',
-                    data:[],
-                    backgroundColor:['#f72585','#4cc9f0','#4361ee','#7209b7','#f8961e']
-                }]},
-                options:{responsive:true,maintainAspectRatio:false}
+            type:'pie',
+            data:{labels:[],datasets:[{ data:[], backgroundColor:[] }]},
+            options:{responsive:true,maintainAspectRatio:false}
             });
 
-            // Work Chart
+            // Work time
             new Chart(document.getElementById('workChart').getContext('2d'), {
-                type:'bar',
-                data:{labels:[],datasets:[{
-                    label:'Time Spent',
-                    data:[],
-                    borderColor:'#4cc9f0',
-                    backgroundColor:'rgba(76,201,240,0.1)',
-                    tension:0.3,fill:true
-                }]},
-                options:{responsive:true,maintainAspectRatio:false}
+            type:'bar',
+            data:{labels:[],datasets:[{ label:'Hours', data:[], fill:true }]},
+            options:{responsive:true,maintainAspectRatio:false}
             });
 
-            // Study Chart
+            // Study hours
             new Chart(document.getElementById('studyChart').getContext('2d'), {
-                type:'line',
-                data:{labels:[],datasets:[{
-                    label:'Study Time',
-                    data:[],
-                    borderColor:'#f72585',
-                    backgroundColor:'rgba(247,37,133,0.1)',
-                    tension:0.3,fill:true
-                }]},
-                options:{responsive:true,maintainAspectRatio:false}
+            type:'line',
+            data:{labels:[],datasets:[{ label:'Study Time', data:[], tension:0.3, fill:true }]},
+            options:{responsive:true,maintainAspectRatio:false}
             });
         }
 
-        // ---- UI Helpers ----
-
-        // ─── Callbacks ────────────────────────────────────────────────
-
-        function onTradingData(r) {
-            if (r.status===200) populateTable('tradingHistoryTable', r.data, ['Date','Instrument','P/L','Account']);
-            else console.error(r.error);
-        }
-        function onWeightData(r) {
-            if (r.status===200) populateTable('weightHistoryTable', r.data, ['Date','Weight','Trend']);
-        }
-        function onNutritionData(r) {
-            if (r.status===200) populateTable('nutritionHistoryTable', r.data, ['Date','Meal','Calories','Protein']);
-        }
-        function onBudgetData(r) {
-            if (r.status===200) populateTable('budgetHistoryTable', r.data, ['Date','Description','Amount','Category']);
-        }
-        function onWorkData(r) {
-            if (r.status===200) populateTable('workHistoryTable', r.data, ['Date','Project','Task','Timespent']);
-        }
-        function onStudyData(r) {
-            if (r.status===200) populateTable('studyHistoryTable', r.data, ['Date','Subject','Timespent','Progress']);
-        }
-        function onAccountsData(r) {
-            if (r.status===200) updateAccountDropdown(r.data);
-        }
-        function onGoalsData(r) {
-            if (r.status===200) console.log('Goals loaded', r.data);
-        }
-
-        // ─── Utility: render a simple two‑column table ────────────────
-        function populateTable(tableId, data, cols) {
-            const t = document.getElementById(tableId);
-            if (!t) return;
-            // remove old rows
-            while (t.rows.length>1) t.deleteRow(1);
-            if (!data || !data.length) {
-            const r = t.insertRow();
-            const c = r.insertCell();
-            c.colSpan = cols.length;
-            c.textContent = 'No data';
-            return;
-            }
-            data.forEach(item => {
-            const r = t.insertRow();
-            cols.forEach(col => {
-                const c = r.insertCell();
-                if (col==='P/L') {
-                const num = parseFloat(item[col])||0;
-                c.textContent = (num>=0?'+':'-')+'$'+Math.abs(num).toFixed(2);
-                } else {
-                c.textContent = item[col] ?? '';
-                }
-            });
-            });
-        }
-
-        function showNotification(type, message) {
+        // ─── Notifications & Loading ────────────────────────────────
+        function showNotification(type,message) {
             const n = document.getElementById(`${type}Notification`);
+            if (!n) return;
             n.textContent = message;
             n.classList.add('show');
             setTimeout(()=>n.classList.remove('show'),3000);
         }
-
         function showLoading() {
-            document.querySelectorAll('.history-table tbody').forEach(t=>{
-                t.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading…</td></tr>';
+            document.querySelectorAll('.history-table tbody').forEach(tb=>{
+            tb.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading…</td></tr>';
             });
         }
         function hideLoading() {
-            // tables update themselves
+            // tables refresh themselves
         }
     </script>
+
 
 </body>
 </html>
