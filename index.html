@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Life Tracker Pro</title>
-    <link rel="manifest" href="data:application/manifest+json,{}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -1250,13 +1249,16 @@
         };
         
         // Initialize app
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
-            setupTabs();
-            await loadInitialData();
-            setupEventListeners();
-            initializeCharts();
-            updateDashboard();
+        // On page load, fetch all sections
+        document.addEventListener('DOMContentLoaded', () => {
+            apiCall('get',         { category:'trading', limit:10 },    'onTradingData');
+            apiCall('get',         { category:'weight',  limit:10 },    'onWeightData');
+            apiCall('get',         { category:'nutrition',limit:10 },    'onNutritionData');
+            apiCall('get',         { category:'budget',  limit:10 },    'onBudgetData');
+            apiCall('get',         { category:'work',    limit:10 },    'onWorkData');
+            apiCall('get',         { category:'study',   limit:10 },    'onStudyData');
+            apiCall('getaccounts', {},                               'onAccountsData');
+            apiCall('getgoals',    {},                               'onGoalsData');
         });
 
         function setupTabs() {
@@ -1330,9 +1332,10 @@
 
         function updateAccountDropdown(accounts) {
             const sel = document.getElementById('tradeAccount');
+            if (!sel) return;
             sel.innerHTML = accounts.length
-                ? accounts.map(a => `<option value="${a.Name}">${a.Name} (${a.Currency})</option>`).join('')
-                : '<option value="">No accounts</option>';
+            ? accounts.map(a=>`<option value="${a.Name}">${a.Name}</option>`).join('')
+            : '<option>No accounts</option>';
         }
 
         function renderAccounts(accounts) {
@@ -1793,40 +1796,58 @@
 
         // ---- UI Helpers ----
 
+        // ─── Callbacks ────────────────────────────────────────────────
+
+        function onTradingData(r) {
+            if (r.status===200) populateTable('tradingHistoryTable', r.data, ['Date','Instrument','P/L','Account']);
+            else console.error(r.error);
+        }
+        function onWeightData(r) {
+            if (r.status===200) populateTable('weightHistoryTable', r.data, ['Date','Weight','Trend']);
+        }
+        function onNutritionData(r) {
+            if (r.status===200) populateTable('nutritionHistoryTable', r.data, ['Date','Meal','Calories','Protein']);
+        }
+        function onBudgetData(r) {
+            if (r.status===200) populateTable('budgetHistoryTable', r.data, ['Date','Description','Amount','Category']);
+        }
+        function onWorkData(r) {
+            if (r.status===200) populateTable('workHistoryTable', r.data, ['Date','Project','Task','Timespent']);
+        }
+        function onStudyData(r) {
+            if (r.status===200) populateTable('studyHistoryTable', r.data, ['Date','Subject','Timespent','Progress']);
+        }
+        function onAccountsData(r) {
+            if (r.status===200) updateAccountDropdown(r.data);
+        }
+        function onGoalsData(r) {
+            if (r.status===200) console.log('Goals loaded', r.data);
+        }
+
+        // ─── Utility: render a simple two‑column table ────────────────
         function populateTable(tableId, data, cols) {
-            const table = document.getElementById(tableId);
-            if (!table) return;
-            while (table.rows.length>1) table.deleteRow(1);
-            if (!data.length) {
-                const r = table.insertRow();
-                const c = r.insertCell();
-                c.colSpan = cols.length;
-                c.textContent = 'No data available';
-                c.style.textAlign = 'center';
-                return;
+            const t = document.getElementById(tableId);
+            if (!t) return;
+            // remove old rows
+            while (t.rows.length>1) t.deleteRow(1);
+            if (!data || !data.length) {
+            const r = t.insertRow();
+            const c = r.insertCell();
+            c.colSpan = cols.length;
+            c.textContent = 'No data';
+            return;
             }
             data.forEach(item => {
-                const r = table.insertRow();
-                cols.forEach(col=>{
-                    const cell = r.insertCell();
-                    let v = item[col]||'';
-                    if (col==='P/L') {
-                        const num = parseFloat(v)||0;
-                        cell.textContent = num>=0?`+$${num.toFixed(2)}`:`-$${Math.abs(num).toFixed(2)}`;
-                        cell.className = num>=0?'status-positive':'status-negative';
-                    } else if (col==='Weight') {
-                        cell.textContent = `${v} lbs`;
-                    } else if (col==='Trend') {
-                        cell.textContent = v;
-                        cell.className = v>=0?'status-negative':'status-positive';
-                    } else if (col==='Timespent') {
-                        cell.textContent = `${v} hrs`;
-                    } else if (col==='Progress') {
-                        cell.textContent = `${v}%`;
-                    } else {
-                        cell.textContent = v;
-                    }
-                });
+            const r = t.insertRow();
+            cols.forEach(col => {
+                const c = r.insertCell();
+                if (col==='P/L') {
+                const num = parseFloat(item[col])||0;
+                c.textContent = (num>=0?'+':'-')+'$'+Math.abs(num).toFixed(2);
+                } else {
+                c.textContent = item[col] ?? '';
+                }
+            });
             });
         }
 
