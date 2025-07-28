@@ -277,7 +277,6 @@
             border-radius: 6px;
             font-size: 0.9rem;
             transition: var(--transition);
-            appearance: none;
             -webkit-appearance: none;
         }
 
@@ -1535,42 +1534,54 @@
 
         // ─── JSONP Write Callbacks & Handlers ─────────────────────────
         function saveTrade() {
-            const acct = document.getElementById('tradeAccount').value;
-            const sym = document.getElementById('tradeSymbol').value;
-            const ent = parseFloat(document.getElementById('tradeEntry').value);
-            const ext = parseFloat(document.getElementById('tradeExit').value);
-            const qty = parseFloat(document.getElementById('tradeSize').value);
-            const pl = parseFloat(document.getElementById('tradeResult').value);
-            const notes = document.getElementById('tradeNotes').value;
-            
-            if (!acct || !sym || isNaN(qty) || isNaN(pl)) {
-                return showNotification('error', 'Fill in all required trade fields');
-            }
-            
-            jsonpCall('add', {
-                category: 'trading',
-                data: {
-                    Account: acct,
-                    Instrument: sym,
-                    Entry: ent,
-                    Exit: ext,
-                    Quantity: qty,
-                    'P/L': pl,
-                    Comments: notes
-                }
-            }, 'onAfterSaveTrade');
-        }
+			const acct = document.getElementById('tradeAccount').value;
+			const sym = document.getElementById('tradeSymbol').value;
+			const ent = parseFloat(document.getElementById('tradeEntry').value) || 0;
+			const ext = parseFloat(document.getElementById('tradeExit').value) || 0;
+			const qty = parseFloat(document.getElementById('tradeSize').value) || 0;
+			const pl = parseFloat(document.getElementById('tradeResult').value) || 0;
+			const notes = document.getElementById('tradeNotes').value;
+			
+			// Validate required fields
+			if (!acct || !sym || isNaN(qty) || isNaN(pl)) {
+				return showNotification('error', 'Fill in all required trade fields');
+			}
+			
+			// Calculate P/L if not entered manually
+			let calculatedPL = pl;
+			if (pl === 0 && ent > 0 && ext > 0 && qty > 0) {
+				calculatedPL = (ext - ent) * qty;
+			}
+			
+			// Format the numbers to avoid scientific notation
+			const formattedPL = calculatedPL.toFixed(2);
+			const formattedQty = qty.toFixed(8); // For crypto trades with small quantities
+			
+			jsonpCall('add', {
+				category: 'trading',
+				data: {
+					Account: acct,
+					Instrument: sym,
+					Entry: ent,
+					Exit: ext,
+					Quantity: formattedQty,
+					'P/L': formattedPL,
+					Comments: notes,
+					Date: new Date().toISOString().split('T')[0] // Add current date
+				}
+			}, 'onAfterSaveTrade');
+		}
 
-        function onAfterSaveTrade(r) {
-            if (r.status === 200) {
-                showNotification('success', 'Trade saved');
-                clearTradeForm();
-                jsonpCall('get', { category: 'trading', limit: 100 }, 'onTradingData');
-                jsonpCall('getaccounts', {}, 'onAccountsData');
-            } else {
-                showNotification('error', r.error);
-            }
-        }
+		function onAfterSaveTrade(r) {
+			if (r.status === 200) {
+				showNotification('success', 'Trade saved successfully');
+				clearTradeForm();
+				jsonpCall('get', { category: 'trading', limit: 100 }, 'onTradingData');
+				jsonpCall('getaccounts', {}, 'onAccountsData');
+			} else {
+				showNotification('error', r.error || 'Failed to save trade');
+			}
+		}
 
         function saveWeight() {
             const w = parseFloat(document.getElementById('currentWeight').value);
