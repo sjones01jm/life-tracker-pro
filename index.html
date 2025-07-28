@@ -465,6 +465,19 @@
             .macro-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
+            /* Scrollable tables */
+            .table-scroll-container {
+                overflow-x: auto;
+                width: 100%;
+                margin-top: 15px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            
+            .history-table {
+                min-width: 600px;
+            }
         }
 
         @media (max-width: 576px) {
@@ -481,6 +494,10 @@
             .history-table td {
                 padding: 8px 10px;
                 font-size: 14px;
+            }
+            
+            .container {
+                padding: 10px;
             }
         }
 
@@ -543,6 +560,20 @@
         
         .task-btn:hover {
             color: var(--primary);
+        }
+        
+        /* Form fixes */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            min-width: 150px;
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -659,7 +690,7 @@
                         <input type="text" class="form-control" id="tradeSymbol" placeholder="AAPL, TSLA, BTC, etc.">
                     </div>
                     
-                    <div class="grid-2">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="tradeEntry">Entry Price</label>
                             <input type="number" class="form-control" id="tradeEntry" step="0.01">
@@ -670,7 +701,7 @@
                         </div>
                     </div>
                     
-                    <div class="grid-2">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="tradeSize">Size/Quantity</label>
                             <input type="number" class="form-control" id="tradeSize">
@@ -696,21 +727,23 @@
                     </div>
                     
                     <h3>Recent Trades</h3>
-                    <table class="history-table" id="tradingHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Symbol</th>
-                                <th>P/L</th>
-                                <th>Account</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll-container">
+                        <table class="history-table" id="tradingHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Symbol</th>
+                                    <th>P/L</th>
+                                    <th>Account</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -763,20 +796,22 @@
                     </div>
                     
                     <h3>Recent Entries</h3>
-                    <table class="history-table" id="weightHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Weight</th>
-                                <th>Change</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="3">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll-container">
+                        <table class="history-table" id="weightHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Weight</th>
+                                    <th>Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -861,7 +896,7 @@
                         <input type="text" class="form-control" id="foodDescription" placeholder="What did you eat?">
                     </div>
                     
-                    <div class="grid-3">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="calories">Calories</label>
                             <input type="number" class="form-control" id="calories">
@@ -876,7 +911,7 @@
                         </div>
                     </div>
                     
-                    <div class="grid-3">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="fats">Fats (g)</label>
                             <input type="number" class="form-control" id="fats" step="0.1">
@@ -897,7 +932,7 @@
                         <input type="number" class="form-control" id="dailyCalories" value="2000">
                     </div>
                     
-                    <div class="grid-3">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="proteinGoal">Protein Goal (g)</label>
                             <input type="number" class="form-control" id="proteinGoal" value="150">
@@ -920,21 +955,23 @@
                     </div>
                     
                     <h3>Recent Meals</h3>
-                    <table class="history-table" id="nutritionHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Meal</th>
-                                <th>Calories</th>
-                                <th>Protein</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll-container">
+                        <table class="history-table" id="nutritionHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Meal</th>
+                                    <th>Calories</th>
+                                    <th>Protein</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -972,7 +1009,7 @@
                         </select>
                     </div>
                     
-                    <div class="grid-2">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="transactionAmount">Amount</label>
                             <input type="number" class="form-control" id="transactionAmount" step="0.01">
@@ -1000,21 +1037,23 @@
                     </div>
                     
                     <h3>Recent Transactions</h3>
-                    <table class="history-table" id="budgetHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                                <th>Category</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll-container">
+                        <table class="history-table" id="budgetHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1037,7 +1076,7 @@
                             <div class="goal-header">
                                 <div class="goal-title">Website Redesign</div>
                                 <div class="goal-progress">
-                                    <div class="goal-status">65% complete</div>
+                                    <div class="goal-status">15% complete</div>
                                 </div>
                             </div>
                             <div class="progress-bar">
@@ -1057,7 +1096,7 @@
                         <textarea class="form-control" id="projectDescription" rows="3"></textarea>
                     </div>
                     
-                    <div class="grid-2">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="projectStart">Start Date</label>
                             <input type="date" class="form-control" id="projectStart">
@@ -1100,7 +1139,7 @@
                                 <div class="task-progress">
                                     <div class="task-progress-fill" style="width: 75%;"></div>
                                 </div>
-                                <div>Project: Website Redesign</div>
+                                <div>Project: Pointclickcare</div>
                             </div>
                             <div class="task-actions">
                                 <button class="task-btn"><i class="fas fa-edit"></i></button>
@@ -1115,21 +1154,23 @@
                     </div>
                     
                     <h3>Recent Activity</h3>
-                    <table class="history-table" id="workHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Project</th>
-                                <th>Task</th>
-                                <th>Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll-container">
+                        <table class="history-table" id="workHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Project</th>
+                                    <th>Task</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1171,7 +1212,7 @@
                         <input type="text" class="form-control" id="studyTopic" placeholder="What did you study?">
                     </div>
                     
-                    <div class="grid-2">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="studyTime">Time Spent (hours)</label>
                             <input type="number" class="form-control" id="studyTime" step="0.25">
@@ -1210,21 +1251,23 @@
                     </div>
                     
                     <h3>Recent Sessions</h3>
-                    <table class="history-table" id="studyHistoryTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Subject</th>
-                                <th>Time</th>
-                                <th>Progress</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll-container">
+                        <table class="history-table" id="studyHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                    <th>Time</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1361,13 +1404,13 @@
         function saveTrade() {
             const acct = document.getElementById('tradeAccount').value;
             const sym = document.getElementById('tradeSymbol').value;
-            const ent = document.getElementById('tradeEntry').value;
-            const ext = document.getElementById('tradeExit').value;
-            const qty = document.getElementById('tradeSize').value;
-            const pl = document.getElementById('tradeResult').value;
+            const ent = parseFloat(document.getElementById('tradeEntry').value);
+            const ext = parseFloat(document.getElementById('tradeExit').value);
+            const qty = parseFloat(document.getElementById('tradeSize').value);
+            const pl = parseFloat(document.getElementById('tradeResult').value);
             const notes = document.getElementById('tradeNotes').value;
             
-            if (!acct || !sym || !qty || !pl) {
+            if (!acct || !sym || isNaN(qty) || isNaN(pl)) {
                 return showNotification('error', 'Fill in all required trade fields');
             }
             
@@ -1388,6 +1431,7 @@
         function onAfterSaveTrade(r) {
             if (r.status === 200) {
                 showNotification('success', 'Trade saved');
+                clearTradeForm();
                 jsonpCall('get', { category: 'trading', limit: 100 }, 'onTradingData');
                 jsonpCall('getaccounts', {}, 'onAccountsData');
             } else {
@@ -1438,28 +1482,29 @@
         function saveMeal() {
             const m = document.getElementById('mealType').value;
             const f = document.getElementById('foodDescription').value;
-            const c = document.getElementById('calories').value;
-            if (!m||!f||!c) return showNotification('error','Complete meal fields');
+            const c = parseFloat(document.getElementById('calories').value);
+            if (!m||!f||isNaN(c)) return showNotification('error','Complete meal fields');
             jsonpCall('add',{category:'nutrition',data:{
             Meal:m, Food:f, Calories:c,
-            Protein:document.getElementById('protein').value||0,
-            Carbs:  document.getElementById('carbs').value||0,
-            Fats:   document.getElementById('fats').value||0,
-            FastingHours:document.getElementById('fastingHours').value||0
+            Protein:parseFloat(document.getElementById('protein').value)||0,
+            Carbs:  parseFloat(document.getElementById('carbs').value)||0,
+            Fats:   parseFloat(document.getElementById('fats').value)||0,
+            FastingHours:parseFloat(document.getElementById('fastingHours').value)||0
             }}, 'onAfterSaveMeal');
         }
         function onAfterSaveMeal(r) {
             if (r.status===200) {
             showNotification('success','Meal saved');
+            clearMealForm();
             jsonpCall('get',{category:'nutrition',limit:10},'onNutritionData');
             } else showNotification('error',r.error);
         }
 
         function saveNutritionGoals() {
-            const cal  = document.getElementById('dailyCalories').value;
-            const prot = document.getElementById('proteinGoal').value;
-            const carb = document.getElementById('carbsGoal').value;
-            const fat  = document.getElementById('fatsGoal').value;
+            const cal  = parseFloat(document.getElementById('dailyCalories').value);
+            const prot = parseFloat(document.getElementById('proteinGoal').value);
+            const carb = parseFloat(document.getElementById('carbsGoal').value);
+            const fat  = parseFloat(document.getElementById('fatsGoal').value);
             jsonpCall('add',{category:'goals',data:{
             Category:'nutrition', GoalName:'Daily Nutrition',
             TargetValue:`${cal}|${prot}|${carb}|${fat}`
@@ -1476,9 +1521,9 @@
             const d    = document.getElementById('transactionDate').value || new Date().toISOString().split('T')[0];
             const desc = document.getElementById('transactionDescription').value;
             const cat  = document.getElementById('transactionCategory').value;
-            const amt  = document.getElementById('transactionAmount').value;
+            const amt  = parseFloat(document.getElementById('transactionAmount').value);
             const acc  = document.getElementById('transactionAccount').value;
-            if (!desc||!amt) return showNotification('error','Fill transaction fields');
+            if (!desc||isNaN(amt)) return showNotification('error','Fill transaction fields');
             jsonpCall('add',{category:'budget',data:{
             Date:d, Description:desc, Category:cat, Amount:amt, Account:acc
             }}, 'onAfterSaveTxn');
@@ -1486,12 +1531,13 @@
         function onAfterSaveTxn(r) {
             if (r.status===200) {
             showNotification('success','Transaction saved');
+            clearTransactionForm();
             jsonpCall('get',{category:'budget',limit:10},'onBudgetData');
             } else showNotification('error',r.error);
         }
 
         function saveBudget() {
-            const mb = document.getElementById('monthlyBudget').value;
+            const mb = parseFloat(document.getElementById('monthlyBudget').value);
             jsonpCall('add',{category:'goals',data:{
             Category:'budget', GoalName:'Monthly Budget', TargetValue:mb
             }}, 'onAfterSaveBudget');
@@ -1525,6 +1571,7 @@
         function onAfterSaveProj(r) {
             if (r.status === 200) {
                 showNotification('success', 'Project saved');
+                clearProjectForm();
                 jsonpCall('get', { category: 'work', limit: 100 }, 'onWorkData');
             } else {
                 showNotification('error', r.error);
@@ -1534,7 +1581,7 @@
         function saveTask() {
             const project = document.getElementById('taskProject').value;
             const name = document.getElementById('taskName').value;
-            const progress = document.getElementById('taskProgress').value || 0;
+            const progress = parseFloat(document.getElementById('taskProgress').value) || 0;
             
             if (!project || !name) {
                 return showNotification('error', 'Project and task name required');
@@ -1553,6 +1600,7 @@
         function onAfterSaveTask(r) {
             if (r.status === 200) {
                 showNotification('success', 'Task saved');
+                clearTaskForm();
                 jsonpCall('get', { category: 'work', limit: 100 }, 'onWorkData');
             } else {
                 showNotification('error', r.error);
@@ -1588,11 +1636,11 @@
             const date = document.getElementById('studyDate').value || new Date().toISOString().split('T')[0];
             const subject = document.getElementById('studySubject').value;
             const topic = document.getElementById('studyTopic').value;
-            const time = document.getElementById('studyTime').value;
-            const progress = document.getElementById('studyProgress').value || 0;
+            const time = parseFloat(document.getElementById('studyTime').value);
+            const progress = parseFloat(document.getElementById('studyProgress').value) || 0;
             const notes = document.getElementById('studyNotes').value;
             
-            if (!subject || !time) {
+            if (!subject || isNaN(time)) {
                 return showNotification('error', 'Subject and time required');
             }
             
@@ -1611,6 +1659,7 @@
         function onAfterSaveStudy(r) {
             if (r.status === 200) {
                 showNotification('success', 'Session saved');
+                clearStudySessionForm();
                 jsonpCall('get', { category: 'study', limit: 100 }, 'onStudyData');
             } else {
                 showNotification('error', r.error);
@@ -1618,7 +1667,7 @@
         }
 
         function saveStudyGoals() {
-            const w = document.getElementById('weeklyStudyGoal').value||0;
+            const w = parseFloat(document.getElementById('weeklyStudyGoal').value)||0;
             jsonpCall('add',{category:'goals',data:{
             Category:'study', GoalName:'Weekly Study', TargetValue:w
             }}, 'onAfterSaveStudyGoals');
@@ -1655,6 +1704,9 @@
                         cell.textContent = `${item[col] || ''} hrs`;
                     } else if (col === 'Progress') {
                         cell.textContent = `${item[col] || 0}%`;
+                    } else if (col === 'Amount') {
+                        const num = parseFloat(item[col]) || 0;
+                        cell.textContent = '$' + num.toFixed(2);
                     } else {
                         cell.textContent = item[col] ?? '';
                     }
@@ -1825,6 +1877,52 @@
             document.getElementById('saveStudySessionBtn').onclick = saveStudySession;
             document.getElementById('saveStudyGoalsBtn').onclick = saveStudyGoals;
             document.getElementById('addSubjectBtn').onclick = addSubject;
+        }
+
+        // ─── Form Clearing Functions ────────────────────────────────
+        function clearTradeForm() {
+            document.getElementById('tradeSymbol').value = '';
+            document.getElementById('tradeEntry').value = '';
+            document.getElementById('tradeExit').value = '';
+            document.getElementById('tradeSize').value = '';
+            document.getElementById('tradeResult').value = '';
+            document.getElementById('tradeNotes').value = '';
+        }
+        
+        function clearMealForm() {
+            document.getElementById('foodDescription').value = '';
+            document.getElementById('calories').value = '';
+            document.getElementById('protein').value = '';
+            document.getElementById('carbs').value = '';
+            document.getElementById('fats').value = '';
+            document.getElementById('fastingHours').value = '';
+        }
+        
+        function clearTransactionForm() {
+            document.getElementById('transactionDate').value = '';
+            document.getElementById('transactionDescription').value = '';
+            document.getElementById('transactionAmount').value = '';
+            document.getElementById('transactionAccount').value = '';
+        }
+        
+        function clearProjectForm() {
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectDescription').value = '';
+            document.getElementById('projectStart').value = '';
+            document.getElementById('projectEnd').value = '';
+        }
+        
+        function clearTaskForm() {
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskProgress').value = '0';
+        }
+        
+        function clearStudySessionForm() {
+            document.getElementById('studyDate').value = '';
+            document.getElementById('studyTopic').value = '';
+            document.getElementById('studyTime').value = '';
+            document.getElementById('studyProgress').value = '';
+            document.getElementById('studyNotes').value = '';
         }
 
         // ─── Nutrition dashboard ────────────────────────────────────
@@ -2146,6 +2244,7 @@
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
+                    <option value="CAD">CAD ($)</option>
                     <option value="BTC">Bitcoin</option>
                     <option value="ETH">Ethereum</option>
                 </select>
